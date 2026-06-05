@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Live2D test — Natori</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #1a1a2e;
+      }
+      #app {
+        width: 100%;
+        height: 100%;
+      }
+      #log {
+        position: fixed;
+        left: 8px;
+        bottom: 8px;
+        color: #9f9;
+        font: 12px monospace;
+        max-width: 90vw;
+      }
+    </style>
+    <script src="/live2d/core/live2dcubismcore.min.js"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <pre id="log">loading…</pre>
+    <script type="module">
+      const log = (m) => {
+        document.getElementById("log").textContent = m;
+        console.log(m);
+      };
+      try {
+        if (!window.Live2DCubismCore) throw new Error("no Live2DCubismCore");
+        const PIXI = await import("https://cdn.jsdelivr.net/npm/pixi.js@6.5.10/dist/browser/pixi.min.mjs");
+        window.PIXI = PIXI;
+        const { Live2DModel } = await import(
+          "https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0/dist/cubism4.min.js"
+        );
+        Live2DModel.registerTicker(PIXI.Ticker);
+        const host = document.getElementById("app");
+        const app = new PIXI.Application({
+          resizeTo: host,
+          backgroundAlpha: 0,
+        });
+        host.appendChild(app.view);
+        const model = await Live2DModel.from("/live2d/patient/Natori.model3.json");
+        const w = app.screen.width;
+        const h = app.screen.height;
+        const canvasW = 500;
+        const canvasH = 500;
+        const scale = Math.min((w * 0.9) / canvasW, (h * 0.88) / canvasH);
+        model.anchor.set(0.5, 0.34);
+        model.scale.set(scale);
+        model.position.set(w / 2, h * 0.46);
+        app.stage.addChild(model);
+        model.motion("Idle");
+        model.expression("Normal");
+        log("OK — model loaded");
+      } catch (e) {
+        log("ERROR: " + (e?.message || e));
+        console.error(e);
+      }
+    </script>
+  </body>
+</html>

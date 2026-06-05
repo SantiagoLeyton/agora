@@ -1,0 +1,142 @@
+import type { UserRole } from "@/types";
+import { getTimeGreeting } from "@/lib/greeting";
+import { BRAND } from "@/lib/branding";
+import { clinicalCopy } from "@/lib/clinical-copy";
+
+export interface PageHeroMeta {
+  eyebrow?: string;
+  title: string;
+  description: string;
+}
+
+const routeHero: Record<string, PageHeroMeta> = {
+  "/dashboard": {
+    eyebrow: BRAND.institutionName,
+    title: "Espacio académico clínico",
+    description: "Simulación psicosocial, análisis clínico y seguimiento de competencias terapéuticas.",
+  },
+  "/simulator": {
+    eyebrow: "Práctica clínica inmersiva",
+    title: clinicalCopy.simulator,
+    description: "Expedientes narrativos interactivos en entorno seguro y supervisado.",
+  },
+  "/evaluation": {
+    eyebrow: "Retroalimentación formativa",
+    title: clinicalCopy.evaluation,
+    description: "Desempeño clínico, competencias y recomendaciones terapéuticas personalizadas.",
+  },
+  "/evaluation/history": {
+    eyebrow: "Bitácora clínica",
+    title: "Historial de sesiones",
+    description: "Registro completo de simulaciones y análisis clínicos.",
+  },
+  "/teacher": {
+    eyebrow: "Gestión académica",
+    title: "Centro de supervisión clínica",
+    description: "Expedientes, participantes, sesiones y seguimiento terapéutico.",
+  },
+  "/teacher/cases": {
+    eyebrow: "Contenido clínico",
+    title: clinicalCopy.cases,
+    description: "Diseña y publica experiencias de simulación psicológica.",
+  },
+  "/teacher/students": {
+    eyebrow: "Seguimiento",
+    title: clinicalCopy.students,
+    description: "Progreso clínico, riesgo formativo y actividad reciente.",
+  },
+  "/teacher/groups": {
+    eyebrow: "Organización",
+    title: "Cohortes clínicas",
+    description: "Grupos, semestres y métricas colectivas de simulación.",
+  },
+  "/teacher/simulations": {
+    eyebrow: "Calendario clínico",
+    title: "Sesiones programadas",
+    description: "Agenda simulaciones y asigna expedientes por cohorte.",
+  },
+  "/teacher/assignments": {
+    eyebrow: "Asignaciones",
+    title: clinicalCopy.tasks,
+    description: "Control de cumplimiento y fechas límite formativas.",
+  },
+  "/teacher/evaluations": {
+    eyebrow: "Evaluación",
+    title: "Revisiones de análisis clínico",
+    description: "Desempeño de participantes por simulación.",
+  },
+  "/teacher/metrics": {
+    eyebrow: "Analítica clínica",
+    title: "Métricas terapéuticas",
+    description: "Indicadores del semestre y competencias grupales.",
+  },
+  "/teacher/feedback": {
+    eyebrow: "Formativa",
+    title: clinicalCopy.feedback,
+    description: "Observaciones clínicas y seguimiento personalizado.",
+  },
+  "/admin": {
+    eyebrow: "Institucional",
+    title: "Administración",
+    description: "Usuarios, permisos y configuración de la plataforma clínica.",
+  },
+  "/admin/users": {
+    eyebrow: "Accesos",
+    title: "Usuarios institucionales",
+    description: "Cuentas, roles y permisos del ecosistema académico.",
+  },
+  "/admin/settings": {
+    eyebrow: "Sistema",
+    title: "Configuración",
+    description: "Parámetros académicos y políticas de simulación.",
+  },
+};
+
+export function getPageHeroMeta(pathname: string): PageHeroMeta {
+  if (pathname.match(/\/evaluation\/results\//)) {
+    return {
+      eyebrow: "Resultado clínico",
+      title: "Análisis de desempeño",
+      description: "Retroalimentación terapéutica detallada y competencias evaluadas.",
+    };
+  }
+  if (pathname.match(/\/simulator\/[^/]+$/) && !pathname.includes("/play")) {
+    return {
+      eyebrow: "Expediente",
+      title: "Ficha del expediente clínico",
+      description: "Contexto, objetivos y preparación de la sesión.",
+    };
+  }
+  if (pathname.includes("/play")) {
+    return {
+      eyebrow: "Sesión activa",
+      title: "Simulación en curso",
+      description: "Experiencia narrativa clínica interactiva.",
+    };
+  }
+  return routeHero[pathname] ?? {
+    eyebrow: BRAND.platformName,
+    title: "Plataforma clínica académica",
+    description: BRAND.institutionName,
+  };
+}
+
+export function getPersonalizedHeroTitle(role: UserRole, firstName?: string): string {
+  if (role === "student" && firstName) {
+    return `${getTimeGreeting()}, ${firstName}`;
+  }
+  if (role === "teacher") return "Centro de supervisión clínica";
+  if (role === "admin") return "Control institucional";
+  return "Bienvenido";
+}
+
+export function getRoleWorkspaceLabel(role: UserRole): string {
+  switch (role) {
+    case "teacher":
+      return "Espacio de supervisión";
+    case "admin":
+      return "Administración clínica";
+    default:
+      return "Espacio del participante";
+  }
+}

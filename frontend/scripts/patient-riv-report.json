@@ -1,0 +1,163 @@
+{
+  "generatedAt": "2026-05-29T19:37:33.387Z",
+  "sourceFile": "/home/bonik/simulador_psicologia/public/rive/patient.riv",
+  "fileSizeBytes": 69776,
+  "fileInspect": {
+    "artboards": [
+      {
+        "name": "Artboard",
+        "bounds": {
+          "minX": 0,
+          "minY": 0,
+          "maxX": 500,
+          "maxY": 500
+        },
+        "hasAudio": false,
+        "animations": [
+          {
+            "name": "Head Bop",
+            "loop": "loop"
+          },
+          {
+            "name": "Blush In",
+            "loop": "one-shot"
+          },
+          {
+            "name": "Blush Out",
+            "loop": "one-shot"
+          },
+          {
+            "name": "Blush Idle",
+            "loop": "one-shot"
+          },
+          {
+            "name": "Smile",
+            "loop": "one-shot"
+          },
+          {
+            "name": "Unpoked Left",
+            "loop": "one-shot"
+          },
+          {
+            "name": "Poke Left",
+            "loop": "one-shot"
+          },
+          {
+            "name": "Unpoked Right",
+            "loop": "one-shot"
+          },
+          {
+            "name": "Poke Right",
+            "loop": "one-shot"
+          }
+        ],
+        "stateMachines": [
+          {
+            "name": "State Machine 1"
+          }
+        ]
+      }
+    ],
+    "viewModels": [],
+    "enums": [],
+    "viewModelCount": 0
+  },
+  "runtimeInspect": {
+    "error": "TypeError: document.addEventListener is not a function"
+  },
+  "animationDetails": [
+    {
+      "artboard": "Artboard",
+      "name": "Head Bop",
+      "loop": "loop",
+      "error": "TypeError: Cannot read properties of undefined (reading 'toFixed')"
+    },
+    {
+      "artboard": "Artboard",
+      "name": "Blush In",
+      "loop": "one-shot",
+      "error": "TypeError: Cannot read properties of undefined (reading 'toFixed')"
+    },
+    {
+      "artboard": "Artboard",
+      "name": "Blush Out",
+      "loop": "one-shot",
+      "error": "TypeError: Cannot read properties of undefined (reading 'toFixed')"
+    },
+    {
+      "artboard": "Artboard",
+      "name": "Blush Idle",
+      "loop": "one-shot",
+      "error": "TypeError: Cannot read properties of undefined (reading 'toFixed')"
+    },
+    {
+      "artboard": "Artboard",
+      "name": "Smile",
+      "loop": "one-shot",
+      "error": "TypeError: Cannot read properties of undefined (reading 'toFixed')"
+    },
+    {
+      "artboard": "Artboard",
+      "name": "Unpoked Left",
+      "loop": "one-shot",
+      "error": "TypeError: Cannot read properties of undefined (reading 'toFixed')"
+    },
+    {
+      "artboard": "Artboard",
+      "name": "Poke Left",
+      "loop": "one-shot",
+      "error": "TypeError: Cannot read properties of undefined (reading 'toFixed')"
+    },
+    {
+      "artboard": "Artboard",
+      "name": "Unpoked Right",
+      "loop": "one-shot",
+      "error": "TypeError: Cannot read properties of undefined (reading 'toFixed')"
+    },
+    {
+      "artboard": "Artboard",
+      "name": "Poke Right",
+      "loop": "one-shot",
+      "error": "TypeError: Cannot read properties of undefined (reading 'toFixed')"
+    },
+    {
+      "kind": "stateMachine",
+      "artboard": "Artboard",
+      "inputs": [
+        {
+          "name": "poked left eye",
+          "type": "Trigger"
+        },
+        {
+          "name": "poked right eye",
+          "type": "Trigger"
+        },
+        {
+          "name": "is blushing",
+          "type": "Boolean"
+        }
+      ]
+    }
+  ],
+  "binaryStringsSample": [
+    "Blush",
+    "Blush Idle",
+    "Blush In9",
+    "Blush Out",
+    "Head Bop",
+    "Poke Left",
+    "Poke Left Eye",
+    "Poke Right",
+    "Poke Right Eye",
+    "Smile",
+    "Smile9",
+    "Start blush",
+    "State Machine 1",
+    "Unpoked Left9",
+    "Unpoked Right9",
+    "head",
+    "is blushing",
+    "poked left eye",
+    "poked right eye"
+  ]
+}

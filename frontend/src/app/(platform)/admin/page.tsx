@@ -1,0 +1,75 @@
+"use client";
+
+import Link from "next/link";
+import { Shield, UserCog, Settings, GraduationCap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  HeroSection,
+  MetricGrid,
+  Surface,
+  SectionHeader,
+  ActionTile,
+  ActionTileGrid,
+} from "@/components/design-system";
+import { InstitutionalLogo } from "@/components/shared/institutional-logo";
+import { mockAdminStats } from "@/mocks";
+import { getPageHeroMeta } from "@/lib/page-meta";
+import { BRAND } from "@/lib/branding";
+
+const adminMetricIcons = {
+  "Usuarios registrados": UserCog,
+  Instituciones: Shield,
+  "Casos publicados": GraduationCap,
+  "Sesiones este mes": Settings,
+};
+
+export default function AdminDashboardPage() {
+  const meta = getPageHeroMeta("/admin");
+
+  return (
+    <div className="space-y-8">
+      <HeroSection
+        eyebrow={meta.eyebrow}
+        title={meta.title}
+        description={meta.description}
+        tags={["Ecosistema institucional"]}
+        stats={mockAdminStats.slice(0, 3).map((s) => ({
+          label: s.label.split(" ")[0],
+          value: s.value,
+          hint: s.change,
+        }))}
+        aside={
+          <div className="flex items-center gap-4 rounded-xl border border-border/50 bg-background/60 p-4">
+            <InstitutionalLogo size="md" showText subtitle={BRAND.institutionName} />
+          </div>
+        }
+      />
+
+      <MetricGrid stats={mockAdminStats} icons={adminMetricIcons} />
+
+      <SectionHeader title="Gestión del ecosistema" />
+      <ActionTileGrid>
+        <ActionTile href="/admin/users" icon={UserCog} title="Usuarios" description="Cuentas y permisos" index={0} />
+        <ActionTile href="/admin/settings" icon={Settings} title="Configuración" description="Parámetros académicos" index={1} />
+        <ActionTile href="/teacher" icon={GraduationCap} title="Panel docente" description="Gestión académica" index={2} />
+        <ActionTile href="/simulator" icon={Shield} title="Simulador" description="Vista de casos" index={3} />
+      </ActionTileGrid>
+
+      <Surface variant="muted" className="flex flex-col items-center py-10 text-center sm:flex-row sm:text-left sm:py-8 sm:px-8 gap-6">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <Shield className="h-7 w-7" />
+        </div>
+        <div className="flex-1">
+          <h3 className="font-display font-semibold">Ecosistema {BRAND.platformName}</h3>
+          <p className="mt-1 text-sm text-muted-foreground max-w-xl">
+            Administración centralizada de usuarios, contenido académico y políticas institucionales
+            para {BRAND.institutionName}.
+          </p>
+        </div>
+        <Button asChild variant="outline">
+          <Link href="/admin/settings">Configurar plataforma</Link>
+        </Button>
+      </Surface>
+    </div>
+  );
+}
