@@ -1,0 +1,278 @@
+{
+  "info": {
+    "name": "Agora Backend API",
+    "description": "Coleccion de preparacion frontend para Agora. No incluye secretos reales; configure las variables antes de ejecutar.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "adminEmail", "value": "admin@agora.com" },
+    { "key": "docenteEmail", "value": "docente@agora.com" },
+    { "key": "estudianteEmail", "value": "estudiante@agora.com" },
+    { "key": "password", "value": "change-me" },
+    { "key": "userId", "value": "" },
+    { "key": "groupId", "value": "" },
+    { "key": "caseId", "value": "" },
+    { "key": "sceneId", "value": "" },
+    { "key": "questionId", "value": "" },
+    { "key": "optionId", "value": "" },
+    { "key": "scheduleId", "value": "" },
+    { "key": "attemptId", "value": "" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{accessToken}}", "type": "string" }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "pm.collectionVariables.set('refreshToken', json.refreshToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "noauth" },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"{{adminEmail}}\",\n  \"password\": \"{{password}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Refresh token",
+          "request": {
+            "method": "POST",
+            "auth": { "type": "noauth" },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/auth/refresh",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Current user",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/auth/me" }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/auth/logout",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Create docente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.collectionVariables.set('userId', pm.response.json().id);"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Docente\",\n  \"apellido\": \"Frontend\",\n  \"correo\": \"nuevo.docente@example.com\",\n  \"passwordTemporal\": \"ChangeMe123*\",\n  \"rol\": \"DOCENTE\"\n}"
+            }
+          }
+        },
+        { "name": "List users", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/users?page=0&size=20" } },
+        { "name": "Get user", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/users/{{userId}}" } },
+        { "name": "Roles", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/roles" } },
+        { "name": "Audit", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/audit?page=0&size=20" } }
+      ]
+    },
+    {
+      "name": "Academic",
+      "item": [
+        {
+          "name": "Create group",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.collectionVariables.set('groupId', pm.response.json().id);"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/groups",
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Grupo Frontend\",\n  \"descripcion\": \"Grupo para integracion\",\n  \"periodo\": \"2026-1\"\n}" }
+          }
+        },
+        { "name": "List groups", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/groups?page=0&size=20" } },
+        {
+          "name": "Add student",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/groups/{{groupId}}/students",
+            "body": { "mode": "raw", "raw": "{\n  \"estudianteId\": 3\n}" }
+          }
+        },
+        {
+          "name": "Create schedule",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.collectionVariables.set('scheduleId', pm.response.json().id);"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/schedules",
+            "body": { "mode": "raw", "raw": "{\n  \"grupoId\": {{groupId}},\n  \"casoId\": {{caseId}},\n  \"fechaInicio\": \"2026-06-05T00:00:00Z\",\n  \"fechaFin\": \"2026-06-06T00:00:00Z\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Case Management",
+      "item": [
+        {
+          "name": "Create case",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.collectionVariables.set('caseId', pm.response.json().id);"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/cases",
+            "body": { "mode": "raw", "raw": "{\n  \"titulo\": \"Caso Frontend\",\n  \"descripcion\": \"Caso de integracion\",\n  \"objetivo\": \"Validar contratos REST\",\n  \"nivelDificultad\": \"BASICO\",\n  \"duracionEstimada\": 30\n}" }
+          }
+        },
+        {
+          "name": "Create scene",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.collectionVariables.set('sceneId', pm.response.json().id);"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/cases/{{caseId}}/scenes",
+            "body": { "mode": "raw", "raw": "{\n  \"orden\": 1,\n  \"titulo\": \"Escena inicial\",\n  \"descripcion\": \"Contexto\",\n  \"contenido\": \"Contenido narrativo lineal\",\n  \"activo\": true\n}" }
+          }
+        },
+        {
+          "name": "Create question",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.collectionVariables.set('questionId', pm.response.json().id);"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/scenes/{{sceneId}}/questions",
+            "body": { "mode": "raw", "raw": "{\n  \"enunciado\": \"Que decision tomas?\",\n  \"obligatoria\": true,\n  \"activo\": true\n}" }
+          }
+        },
+        {
+          "name": "Create option",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.collectionVariables.set('optionId', pm.response.json().id);"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/questions/{{questionId}}/options",
+            "body": { "mode": "raw", "raw": "{\n  \"texto\": \"Dialogar\",\n  \"descripcion\": \"Promueve confianza\",\n  \"orden\": 1,\n  \"activo\": true\n}" }
+          }
+        },
+        { "name": "Builder", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/cases/{{caseId}}/builder" } }
+      ]
+    },
+    {
+      "name": "Simulation",
+      "item": [
+        {
+          "name": "Start simulation",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.collectionVariables.set('attemptId', pm.response.json().intentoId);"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/simulations/start",
+            "body": { "mode": "raw", "raw": "{\n  \"casoId\": {{caseId}},\n  \"programacionId\": {{scheduleId}}\n}" }
+          }
+        },
+        {
+          "name": "Answer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/simulations/{{attemptId}}/answer",
+            "body": { "mode": "raw", "raw": "{\n  \"preguntaId\": {{questionId}},\n  \"opcionId\": {{optionId}}\n}" }
+          }
+        },
+        { "name": "States", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/simulations/{{attemptId}}/states" } },
+        { "name": "Finish", "request": { "method": "POST", "url": "{{baseUrl}}/api/v1/simulations/{{attemptId}}/finish" } }
+      ]
+    },
+    {
+      "name": "Attempts",
+      "item": [
+        {
+          "name": "Create journal",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/attempts/{{attemptId}}/journal",
+            "body": { "mode": "raw", "raw": "{\n  \"titulo\": \"Reflexion\",\n  \"contenido\": \"Registro personal del estudiante\"\n}" }
+          }
+        },
+        { "name": "Journal history", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/attempts/{{attemptId}}/journal" } },
+        { "name": "Feedback history", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/attempts/{{attemptId}}/feedback" } },
+        { "name": "Attempt summary", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/attempts/{{attemptId}}/summary" } }
+      ]
+    },
+    {
+      "name": "AI",
+      "item": [
+        {
+          "name": "Generate AI summary",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/attempts/{{attemptId}}/ai/summary",
+            "body": { "mode": "raw", "raw": "{\n  \"instrucciones\": \"Generar sintesis academica descriptiva\"\n}" }
+          }
+        },
+        {
+          "name": "Generate AI fallback scenario",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/attempts/{{attemptId}}/ai/summary",
+            "body": { "mode": "raw", "raw": "{\n  \"instrucciones\": \"Generar sintesis academica descriptiva aun si Ollama no esta disponible\"\n}" }
+          }
+        },
+        { "name": "AI history", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/attempts/{{attemptId}}/ai/summary" } }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        { "name": "Backend health", "request": { "method": "GET", "auth": { "type": "noauth" }, "url": "{{baseUrl}}/actuator/health" } },
+        { "name": "OpenAPI docs", "request": { "method": "GET", "auth": { "type": "noauth" }, "url": "{{baseUrl}}/v3/api-docs" } },
+        { "name": "Swagger UI", "request": { "method": "GET", "auth": { "type": "noauth" }, "url": "{{baseUrl}}/swagger-ui/index.html" } }
+      ]
+    }
+  ]
+}

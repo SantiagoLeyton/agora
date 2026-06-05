@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:agora;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  flyway:
+    enabled: false
+
+security:
+  jwt:
+    secret: VGhpcy1pcy1hLXRlc3Qtc2VjcmV0LWZvci1BZ29yYS1KV1QtMjAyNi1vbmx5
+    access-token-expiration-seconds: 900
+    refresh-token-expiration-seconds: 604800

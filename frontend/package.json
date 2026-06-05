@@ -1,0 +1,10 @@
+{
+  "name": "@agora/frontend",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Placeholder for the future Agora Next.js frontend",
+  "scripts": {
+    "phase-not-implemented": "node -e \"console.log('Frontend implementation starts in a future phase.')\""
+  }
+}
+

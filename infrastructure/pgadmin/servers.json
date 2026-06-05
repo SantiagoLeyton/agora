@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Agora PostgreSQL",
+      "Group": "Agora",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "agora",
+      "Username": "agora",
+      "SSLMode": "prefer"
+    }
+  }
+}
+
