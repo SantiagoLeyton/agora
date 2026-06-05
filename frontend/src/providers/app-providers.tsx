@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { useState, type ReactNode } from "react";
+import { queryClientDefaultOptions } from "@/lib/query-client";
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -12,12 +13,7 @@ export function AppProviders({ children }: AppProvidersProps) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
-        defaultOptions: {
-          queries: {
-            staleTime: 60 * 1000,
-            refetchOnWindowFocus: false,
-          },
-        },
+        defaultOptions: queryClientDefaultOptions,
       })
   );
 

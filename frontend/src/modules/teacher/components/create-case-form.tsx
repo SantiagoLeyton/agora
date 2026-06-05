@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Surface } from "@/components/design-system";
 import { LIVE2D_MODELS } from "@/lib/live2d-models";
 import { buildTeacherCaseBundle } from "@/lib/teacher-case-builder";
+import { queryInvalidation } from "@/lib/query-invalidation";
 import { useCasesCatalogStore } from "@/store/cases-catalog";
 import type { CaseDifficulty, PatientLive2DModel } from "@/types";
 
@@ -66,7 +67,7 @@ export function CreateCaseForm() {
       });
 
       addCase(bundle);
-      void queryClient.invalidateQueries({ queryKey: ["cases"] });
+      void queryInvalidation.cases(queryClient);
       router.push(`/simulator/${bundle.case.id}`);
     } catch {
       setError("No se pudo guardar el caso. Intenta de nuevo.");
