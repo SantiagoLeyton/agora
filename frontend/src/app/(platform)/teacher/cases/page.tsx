@@ -51,7 +51,12 @@ export default function TeacherCasesPage() {
                 <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{caseItem.description}</p>
               </div>
               <div className="flex shrink-0 gap-2">
-                <Button variant="outline" size="sm">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled
+                  title="La edición de casos se habilitará en una próxima iteración"
+                >
                   <Edit className="h-3.5 w-3.5" />
                   Editar
                 </Button>

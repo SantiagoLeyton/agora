@@ -25,9 +25,12 @@ export function ClinicalPatientPortrait({
 
   useEffect(() => {
     if (interactionNonce === 0) return;
-    setPulse(true);
-    const t = window.setTimeout(() => setPulse(false), 700);
-    return () => window.clearTimeout(t);
+    const start = window.setTimeout(() => setPulse(true), 0);
+    const stop = window.setTimeout(() => setPulse(false), 700);
+    return () => {
+      window.clearTimeout(start);
+      window.clearTimeout(stop);
+    };
   }, [interactionNonce]);
 
   return (

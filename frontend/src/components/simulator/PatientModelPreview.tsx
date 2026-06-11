@@ -46,17 +46,21 @@ export function PatientModelPreview({
   const defaultExpression = modelId === "haru" ? "F01" : "Normal";
 
   useEffect(() => {
+    let timer: number | undefined;
     if (!enabled) {
-      setCanMount(false);
-      return;
+      timer = window.setTimeout(() => setCanMount(false), 0);
+      return () => window.clearTimeout(timer);
     }
     if (mountDelayMs <= 0) {
-      setCanMount(true);
-      return;
+      timer = window.setTimeout(() => setCanMount(true), 0);
+      return () => window.clearTimeout(timer);
     }
-    setCanMount(false);
-    const timer = window.setTimeout(() => setCanMount(true), mountDelayMs);
-    return () => window.clearTimeout(timer);
+    const resetTimer = window.setTimeout(() => setCanMount(false), 0);
+    timer = window.setTimeout(() => setCanMount(true), mountDelayMs);
+    return () => {
+      window.clearTimeout(resetTimer);
+      window.clearTimeout(timer);
+    };
   }, [mountDelayMs, enabled]);
 
   const handleCapture = (dataUrl: string) => {

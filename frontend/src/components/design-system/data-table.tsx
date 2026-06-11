@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Surface } from "./surface";
-import { tokens } from "@/styles/tokens";
 
 interface Column<T> {
   key: string;

@@ -18,8 +18,8 @@ interface ClinicalSessionArtifactsProps {
 
 function AiReservedNote({ label }: { label: string }) {
   return (
-    <p className="mt-2 rounded border border-dashed border-border/50 bg-muted/10 px-2 py-1.5 text-[9px] leading-snug text-muted-foreground/90">
-      <Sparkles className="mr-1 inline h-2.5 w-2.5 text-primary/70" />
+    <p className="mt-3 rounded border border-dashed border-border/50 bg-muted/10 px-3 py-2 text-[10px] leading-snug text-muted-foreground/90">
+      <Sparkles className="mr-1.5 inline h-3 w-3 text-primary/70" />
       {label}
     </p>
   );
@@ -36,32 +36,32 @@ export function ClinicalSessionArtifacts({
   return (
     <div className={cn("space-y-3", className)}>
       {summary && (
-        <section className="rounded-lg border border-border/40 bg-card/70 px-3 py-2.5">
-          <h3 className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+        <section className="rounded-lg border border-border/40 bg-card/70 px-4 py-3.5">
+          <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-muted-foreground">
             {summary.title}
           </h3>
-          <p className="mt-2 text-[10px] font-semibold text-foreground">
+          <p className="mt-3 text-xs font-semibold text-foreground">
             Factores identificados
           </p>
-          <ul className="mt-1 space-y-0.5">
+          <ul className="mt-2 space-y-1">
             {summary.factorsIdentified.map((f) => (
               <li
                 key={f}
-                className="flex gap-1.5 text-[10px] leading-snug text-muted-foreground"
+                className="flex gap-2 text-xs leading-snug text-muted-foreground"
               >
                 <span className="text-info">•</span>
                 {f}
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-[10px] font-semibold text-foreground">
+          <p className="mt-3 text-xs font-semibold text-foreground">
             Fortalezas observadas
           </p>
-          <ul className="mt-1 space-y-0.5">
+          <ul className="mt-2 space-y-1">
             {summary.strengthsObserved.map((s) => (
               <li
                 key={s}
-                className="flex gap-1.5 text-[10px] leading-snug text-muted-foreground"
+                className="flex gap-2 text-xs leading-snug text-muted-foreground"
               >
                 <span className="text-success">•</span>
                 {s}
@@ -69,7 +69,7 @@ export function ClinicalSessionArtifacts({
             ))}
           </ul>
           {summary.closingNote && (
-            <p className="mt-2 text-[9px] italic text-muted-foreground/80">
+            <p className="mt-3 text-[10px] italic text-muted-foreground/80">
               {summary.closingNote}
             </p>
           )}
@@ -80,12 +80,12 @@ export function ClinicalSessionArtifacts({
       )}
 
       {formativeFeedback && (
-        <section className="rounded-lg border border-border/40 bg-primary/[0.04] px-3 py-2.5">
-          <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            <GraduationCap className="h-3 w-3 text-primary" />
+        <section className="rounded-lg border border-border/40 bg-primary/[0.04] px-4 py-3.5">
+          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            <GraduationCap className="h-4 w-4 text-primary" />
             {formativeFeedback.title}
           </p>
-          <p className="mt-1.5 text-[11px] leading-relaxed text-foreground/90">
+          <p className="mt-2.5 text-[13px] leading-relaxed text-foreground/90">
             {formativeFeedback.observation}
           </p>
           {formativeFeedback.teacherComment == null &&

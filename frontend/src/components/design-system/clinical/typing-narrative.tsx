@@ -16,22 +16,24 @@ export function TypingNarrative({
   speed = 18,
   enabled = true,
 }: TypingNarrativeProps) {
-  const [displayed, setDisplayed] = useState(enabled ? "" : text);
+  const [displayed, setDisplayed] = useState("");
 
   useEffect(() => {
-    if (!enabled) {
-      setDisplayed(text);
-      return;
-    }
-    setDisplayed("");
+    if (!enabled) return;
     let i = 0;
+    const resetId = window.setTimeout(() => setDisplayed(""), 0);
     const id = setInterval(() => {
       i += 1;
       setDisplayed(text.slice(0, i));
       if (i >= text.length) clearInterval(id);
     }, speed);
-    return () => clearInterval(id);
+    return () => {
+      window.clearTimeout(resetId);
+      clearInterval(id);
+    };
   }, [text, speed, enabled]);
+
+  const visibleText = enabled ? displayed : text;
 
   return (
     <motion.blockquote
@@ -40,8 +42,8 @@ export function TypingNarrative({
       animate={{ opacity: 1 }}
       className={className}
     >
-      &ldquo;{displayed}
-      {enabled && displayed.length < text.length && (
+      &ldquo;{visibleText}
+      {enabled && visibleText.length < text.length && (
         <span className="ml-0.5 inline-block h-[1em] w-0.5 animate-pulse bg-primary/60 align-middle" />
       )}
       &rdquo;

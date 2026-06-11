@@ -212,7 +212,7 @@ export function ClinicalConsultationAvatars({
       psychModelRef.current = null;
       patientModelRef.current = null;
       appRef.current = null;
-      if (hostRef.current) hostRef.current.replaceChildren();
+      host.replaceChildren();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [psychologistModelId, patientModelId]);

@@ -29,7 +29,8 @@ export const useCasesCatalogStore = create<CasesCatalogState>()(
         })),
       removeCase: (caseId) =>
         set((state) => {
-          const { [caseId]: _, ...restScenes } = state.customScenes;
+          const restScenes = { ...state.customScenes };
+          delete restScenes[caseId];
           return {
             customCases: state.customCases.filter((c) => c.id !== caseId),
             customScenes: restScenes,

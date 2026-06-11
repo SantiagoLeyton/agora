@@ -154,7 +154,6 @@ export function ClinicalAvatar({
       if (debug) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const smNames = (rive as any)?.stateMachineNames as string[] | undefined;
-        // eslint-disable-next-line no-console
         console.log("[ClinicalAvatar] discovery", {
           stateMachineNames: smNames,
           animationNames,
@@ -181,9 +180,13 @@ export function ClinicalAvatar({
     const animationNames = safeGetAnimationNames(riveInstance);
     const inputs = sm ? safeGetInputs(riveInstance, sm) : [];
 
-    if (debug) refreshDiscovery(riveInstance, sm);
+    let debugTimer: number | undefined;
+    if (debug) {
+      debugTimer = window.setTimeout(() => refreshDiscovery(riveInstance, sm), 0);
+    }
 
     let appliedInput = false;
+    let nextActiveCue: string | null = null;
 
     if (inputs.length > 0 && sm) {
       for (const [emotionKey, patterns] of EMOTION_INPUT_PATTERNS) {
@@ -201,7 +204,7 @@ export function ClinicalAvatar({
           if (isTriggerInput(type)) {
             if (value >= 62) {
               fireTrigger(input);
-              setActiveCue(`trigger:${name}`);
+              nextActiveCue = `trigger:${name}`;
               appliedInput = true;
             }
           } else if (isBooleanInput(type)) {
@@ -216,19 +219,40 @@ export function ClinicalAvatar({
       }
     }
 
-    if (appliedInput) return;
+    if (appliedInput) {
+      const activeCueTimer =
+        nextActiveCue === null
+          ? undefined
+          : window.setTimeout(() => setActiveCue(nextActiveCue), 0);
+      return () => {
+        if (debugTimer) window.clearTimeout(debugTimer);
+        if (activeCueTimer) window.clearTimeout(activeCueTimer);
+      };
+    }
 
     const cue = resolveAnimationCue(animationNames, emotions);
-    if (!cue || cue === lastAnimationCue.current) return;
+    if (!cue || cue === lastAnimationCue.current) {
+      return () => {
+        if (debugTimer) window.clearTimeout(debugTimer);
+      };
+    }
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (riveInstance as any)?.play?.(cue);
       lastAnimationCue.current = cue;
-      setActiveCue(`animation:${cue}`);
+      nextActiveCue = `animation:${cue}`;
     } catch {
       // ignore
     }
+    const activeCueTimer =
+      nextActiveCue === null
+        ? undefined
+        : window.setTimeout(() => setActiveCue(nextActiveCue), 0);
+    return () => {
+      if (debugTimer) window.clearTimeout(debugTimer);
+      if (activeCueTimer) window.clearTimeout(activeCueTimer);
+    };
   }, [riveInstance, activeSM, stateMachine, emotions, debug]);
 
   return (

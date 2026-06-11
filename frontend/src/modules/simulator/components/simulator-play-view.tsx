@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
-import { ArrowLeft, CheckCircle2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClinicalSessionHeader } from "@/components/simulator/ClinicalSessionHeader";
 import { ClinicalSessionSidebar } from "@/components/simulator/ClinicalSessionSidebar";
 import { ClinicalSessionFooter } from "@/components/simulator/ClinicalSessionFooter";
+import { CompletionBanner } from "@/components/simulator/CompletionBanner";
+import { SimulationResults } from "@/components/simulator/SimulationResults";
 import { DecisionPanel } from "@/modules/simulator/components/decision-panel";
 import { useSimulatorStore, useAuthStore } from "@/store";
 import {
@@ -47,7 +49,6 @@ import {
 } from "@/lib/session-participants";
 import { PatientModelPicker } from "@/components/simulator/PatientModelPicker";
 import type { DialogueOption, PatientLive2DModel, PsychologistVisualState, SimulationCase } from "@/types";
-import { tokens } from "@/styles/tokens";
 
 const ClinicalSessionStage = dynamic(
   () =>
@@ -200,7 +201,7 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
     const last = session.decisions[session.decisions.length - 1];
     const scene = scenes.find((s) => s.id === last.sceneId);
     return scene?.options.find((o) => o.id === last.optionId)?.category;
-  }, [session?.decisions, scenes]);
+  }, [session, scenes]);
 
   const patientExpression = useMemo(
     () =>
@@ -290,12 +291,10 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
         ? buildClinicalSessionSummary(
             caseItem,
             session,
-            emotionalProfile,
-            dialogueTurns,
-            scenes
+            emotionalProfile
           )
         : null,
-    [caseItem, session, isComplete, emotionalProfile, dialogueTurns, scenes]
+    [caseItem, session, isComplete, emotionalProfile]
   );
 
   const formativeFeedback = useMemo(
@@ -419,14 +418,111 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
     );
   }
 
+  // Layout en dos fases: simulación activa vs. resultados
+  if (isComplete) {
+    return (
+      <div className="flex h-full min-h-0 w-full max-w-none flex-col overflow-y-auto bg-background">
+        {/* Cabecera en móvil */}
+        <ClinicalSessionHeader
+          caseTitle={caseItem.title}
+          category={caseItem.category}
+          progress={100}
+          isComplete={true}
+          className="shrink-0 lg:hidden"
+        />
+
+        {/* Contenedor principal de simulación (fijo mientras se lee) */}
+        <div className="flex shrink-0 flex-col min-h-screen lg:grid lg:grid-cols-[18fr_57fr_25fr] lg:min-h-[100vh]">
+          {/* Desktop sidebar */}
+          <ClinicalSessionSidebar
+            caseTitle={caseItem.title}
+            category={caseItem.category}
+            progress={100}
+            setting={currentScene.setting}
+            supportTools={currentScene.supportTools}
+            patientPedagogy={patientPedagogy}
+            sessionLog={sessionLog}
+            sessionSummary={sessionSummary}
+            formativeFeedback={formativeFeedback}
+            className="hidden min-h-0 overflow-y-auto lg:flex"
+          />
+
+          {/* Centro: conversación + avatar */}
+          <div className="flex min-h-0 min-w-0 flex-col border-border/40 lg:border-x">
+            <div className="grid min-h-full grid-rows-[minmax(0,40fr)_minmax(0,60fr)] overflow-hidden">
+              <ClinicalSessionStage
+                psychologist={psychologistParticipant}
+                patient={patientParticipant}
+                psychologistExpression={psychologistExpression}
+                patientExpression={patientExpression}
+                therapeuticAlliance={emotionalProfile.therapeuticAlliance}
+                clinicalObjective={clinicalObjective.objective}
+                clinicalObjectivePhase={clinicalObjective.phaseLabel}
+                patientInteractionNonce={interactionNonce}
+                className="min-h-0"
+              />
+
+              <ClinicalDialoguePanel
+                turns={dialogueTurns}
+                setting={currentScene.setting}
+                sceneTitle={currentScene.title}
+                sessionPhases={sessionPhases}
+                className="min-h-0"
+              />
+            </div>
+          </div>
+
+          {/* Sidebar derecho (oculto en resultados) */}
+          <aside className="hidden min-h-0 min-w-0 flex-col overflow-hidden bg-card/30 lg:flex">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-3">
+              <p className="py-6 text-center text-xs text-muted-foreground">
+                Sesión finalizada. No hay intervenciones pendientes.
+              </p>
+            </div>
+          </aside>
+        </div>
+
+        {/* Banner de completitud + resultados (scroll principal) */}
+        <CompletionBanner
+          duration={session?.elapsedSeconds ?? 0}
+          allianceScore={emotionalProfile.therapeuticAlliance}
+        />
+
+        <SimulationResults
+          summary={sessionSummary}
+          formativeFeedback={formativeFeedback}
+          lastImpact={lastImpact}
+        />
+
+        {/* CTA footer */}
+        <div className="border-t border-border/40 bg-card/30 px-4 py-4 sm:px-6 sm:py-6">
+          <div className="max-w-6xl mx-auto flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <Button variant="outline" asChild className="w-full sm:w-auto">
+              <Link href="/simulator">
+                Volver al repositorio
+              </Link>
+            </Button>
+            <Button
+              onClick={() => router.push("/evaluation")}
+              className="w-full sm:w-auto"
+            >
+              Ver análisis completo
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Fase activa: layout original con columnas
   return (
     <div className="flex h-full min-h-0 w-full max-w-none flex-col overflow-hidden">
       {/* Móvil: cabecera compacta */}
       <ClinicalSessionHeader
         caseTitle={caseItem.title}
         category={caseItem.category}
-        progress={isComplete ? 100 : progress}
-        isComplete={isComplete}
+        progress={progress}
+        isComplete={false}
         className="shrink-0 lg:hidden"
       />
 
@@ -435,13 +531,13 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
         <ClinicalSessionSidebar
           caseTitle={caseItem.title}
           category={caseItem.category}
-          progress={isComplete ? 100 : progress}
+          progress={progress}
           setting={currentScene.setting}
           supportTools={currentScene.supportTools}
           patientPedagogy={patientPedagogy}
           sessionLog={sessionLog}
-          sessionSummary={isComplete ? sessionSummary : null}
-          formativeFeedback={isComplete ? formativeFeedback : null}
+          sessionSummary={null}
+          formativeFeedback={null}
           className="hidden min-h-0 overflow-y-auto lg:flex"
         />
 
@@ -468,42 +564,11 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
               className="min-h-0"
             />
 
-            {isComplete ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex min-h-0 max-h-[22vh] shrink-0 flex-col gap-2 overflow-y-auto border-t border-success/20 bg-success/[0.04] px-3 py-2"
-              >
-                <div className="flex shrink-0 items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-success" />
-                    <p className="text-xs font-semibold">Sesión completada</p>
-                  </div>
-                  <div className="flex gap-1.5">
-                    <Button variant="outline" size="sm" className="h-7 text-[10px]" asChild>
-                      <Link href="/simulator">Repositorio</Link>
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="h-7 text-[10px]"
-                      onClick={() => router.push("/evaluation")}
-                    >
-                      Análisis
-                    </Button>
-                  </div>
-                </div>
-                <ClinicalSessionArtifacts
-                  summary={sessionSummary}
-                  formativeFeedback={formativeFeedback}
-                />
-              </motion.div>
-            ) : (
-              <ClinicalSessionFooter
-                expressionLabel={expressionLabel}
-                psychologistStateLabel={psychologistStateLabel}
-                lastImpact={lastImpact}
-              />
-            )}
+            <ClinicalSessionFooter
+              expressionLabel={expressionLabel}
+              psychologistStateLabel={psychologistStateLabel}
+              lastImpact={lastImpact}
+            />
           </div>
         </div>
 

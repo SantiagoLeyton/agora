@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SessionPhaseStep } from "@/lib/clinical-session-phases";
-import { tokens } from "@/styles/tokens";
 
 interface ClinicalSessionPhaseTimelineProps {
   phases: SessionPhaseStep[];

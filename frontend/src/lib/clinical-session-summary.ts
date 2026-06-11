@@ -1,7 +1,7 @@
 import type { ClinicalSessionSummary, FormativeFeedbackSlot } from "@/types/clinical-session-artifacts";
 import type { EmotionalProfile } from "@/lib/simulator-clinical";
 import type { ClinicalDialogueTurn } from "@/lib/clinical-dialogue";
-import type { Scene, SimulationCase, SimulationSession } from "@/types";
+import type { SimulationCase, SimulationSession } from "@/types";
 
 const CASE_FACTORS: Record<string, string[]> = {
   "case-anxiety-001": [
@@ -50,9 +50,7 @@ function pickStrengths(profile: EmotionalProfile, decisionCount: number): string
 export function buildClinicalSessionSummary(
   caseItem: SimulationCase,
   session: SimulationSession,
-  profile: EmotionalProfile,
-  _turns: ClinicalDialogueTurn[],
-  _scenes: Scene[]
+  profile: EmotionalProfile
 ): ClinicalSessionSummary {
   const factors =
     CASE_FACTORS[caseItem.id]?.slice(0, 4) ?? [

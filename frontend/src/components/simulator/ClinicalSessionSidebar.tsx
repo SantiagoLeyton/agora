@@ -101,11 +101,12 @@ export function ClinicalSessionSidebar({
       )}
 
       {(sessionSummary || formativeFeedback) && (
-        <ClinicalSessionArtifacts
-          summary={sessionSummary}
-          formativeFeedback={formativeFeedback}
-          className="mt-3 shrink-0"
-        />
+        <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
+          <ClinicalSessionArtifacts
+            summary={sessionSummary}
+            formativeFeedback={formativeFeedback}
+          />
+        </div>
       )}
 
       {patientPedagogy && (

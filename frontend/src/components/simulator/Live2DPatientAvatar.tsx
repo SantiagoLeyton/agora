@@ -251,7 +251,6 @@ export function Live2DParticipantAvatar({
           const message = err instanceof Error ? err.message : String(err);
           setStatus("error");
           setErrorMessage(message);
-          // eslint-disable-next-line no-console
           console.error("[Live2DPatientAvatar]", err);
         }
       }
@@ -278,7 +277,7 @@ export function Live2DParticipantAvatar({
       modelRef.current = null;
       appRef.current = null;
       setModelReady(false);
-      if (hostRef.current) hostRef.current.replaceChildren();
+      host.replaceChildren();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modelId, participantRole, enabled]);
