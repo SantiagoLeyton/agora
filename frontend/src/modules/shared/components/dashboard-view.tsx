@@ -8,14 +8,14 @@ import {
   HeroSection,
   MetricGrid,
   Surface,
-  SectionHeader,
   InsightCard,
   InsightHighlight,
   ClinicalInsights,
   CompetencyTracker,
 } from "@/components/design-system";
-import { mockDashboardStats, mockEvaluationResults } from "@/mocks";
+import { mockDashboardStats } from "@/mocks";
 import { useAuthStore } from "@/store";
+import { useEvaluations } from "@/hooks/use-data";
 import { getPersonalizedHeroTitle, getPageHeroMeta } from "@/lib/page-meta";
 import { getMotivationalMessage } from "@/lib/greeting";
 import { clinicalCopy, clinicalInsights, therapeuticCompetencies } from "@/lib/clinical-copy";
@@ -30,8 +30,27 @@ const metricIcons = {
 
 export function DashboardView() {
   const user = useAuthStore((s) => s.user);
+  const { data: evaluations } = useEvaluations();
   const firstName = user?.name?.split(" ")[0] ?? "Participante";
-  const latest = mockEvaluationResults[0];
+  const latest = evaluations?.[0];
+  const scoredEvaluations = evaluations?.filter((e) => e.score !== null) ?? [];
+  const averageScore =
+    scoredEvaluations.length > 0
+      ? Math.round(
+          scoredEvaluations.reduce((sum, item) => sum + (item.score ?? 0), 0) /
+            scoredEvaluations.length
+        )
+      : null;
+  const dashboardStats = mockDashboardStats.map((stat) =>
+    stat.label === "Promedio de evaluación"
+      ? {
+          ...stat,
+          value: averageScore === null ? "N/D" : `${averageScore}%`,
+          change: undefined,
+          trend: "neutral" as const,
+        }
+      : stat
+  );
   const meta = getPageHeroMeta("/dashboard");
 
   return (
@@ -43,7 +62,7 @@ export function DashboardView() {
         tags={["Simulación inmersiva", "Análisis clínico"]}
         stats={[
           { label: "Expedientes", value: mockDashboardStats[0]?.value ?? 0 },
-          { label: "Promedio clínico", value: `${mockDashboardStats[1]?.value ?? 0}%` },
+          { label: "Promedio clínico", value: averageScore === null ? "N/D" : `${averageScore}%` },
           { label: "En curso", value: mockDashboardStats[3]?.value ?? 0, hint: "Sesiones activas" },
         ]}
         action={
@@ -73,7 +92,7 @@ export function DashboardView() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <MetricGrid stats={mockDashboardStats} icons={metricIcons} />
+          <MetricGrid stats={dashboardStats} icons={metricIcons} />
         </div>
         <Surface variant="muted" padding="md">
           <ClinicalInsights insights={clinicalInsights.student} title="Insights de tu práctica" />
@@ -84,6 +103,7 @@ export function DashboardView() {
         <div className="lg:col-span-3">
           <ContinueLearning />
         </div>
+        {latest && (
         <div className="lg:col-span-2">
           <InsightCard
             title={`Última ${clinicalCopy.feedback.toLowerCase()}`}
@@ -98,8 +118,13 @@ export function DashboardView() {
             }
           >
             <p className="font-medium text-foreground">{latest.caseTitle}</p>
-            <InsightHighlight label="Puntuación clínica" value={`${latest.score}%`} className="mt-3" />
+            <InsightHighlight
+              label="Puntuación clínica"
+              value={latest.score === null ? "N/D" : `${latest.score}%`}
+              className="mt-3"
+            />
             <p className="mt-3 text-sm">{latest.feedback[0]}</p>
+            {latest.strengths.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
               {latest.strengths.map((s) => (
                 <span key={s} className="rounded-md bg-success/10 px-2 py-0.5 text-xs text-success">
@@ -107,8 +132,10 @@ export function DashboardView() {
                 </span>
               ))}
             </div>
+            )}
           </InsightCard>
         </div>
+        )}
       </div>
 
       <CompetencyTracker competencies={therapeuticCompetencies} />

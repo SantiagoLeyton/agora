@@ -2,15 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Surface } from "@/components/design-system";
 import { LIVE2D_MODELS } from "@/lib/live2d-models";
-import { buildTeacherCaseBundle } from "@/lib/teacher-case-builder";
-import { queryInvalidation } from "@/lib/query-invalidation";
-import { useCasesCatalogStore } from "@/store/cases-catalog";
+import { useCreateCaseBundle } from "@/hooks/use-data";
 import type { CaseDifficulty, PatientLive2DModel } from "@/types";
 
 const fieldClass =
@@ -18,8 +15,7 @@ const fieldClass =
 
 export function CreateCaseForm() {
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const addCase = useCasesCatalogStore((s) => s.addCase);
+  const createCaseBundle = useCreateCaseBundle();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -36,7 +32,7 @@ export function CreateCaseForm() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -51,24 +47,48 @@ export function CreateCaseForm() {
 
     setSaving(true);
     try {
-      const bundle = buildTeacherCaseBundle({
-        title,
-        description,
-        category,
-        difficulty,
-        durationMinutes,
-        patientModel,
-        patientName,
-        setting,
-        narrative,
-        learningObjective,
-        optionExploreLabel: optionExplore,
-        optionAssessLabel: optionAssess,
+      const backendDifficulty: Record<CaseDifficulty, string> = {
+        basic: "BASICO",
+        intermediate: "INTERMEDIO",
+        advanced: "AVANZADO",
+      };
+      const bundle = await createCaseBundle.mutateAsync({
+        case: {
+          titulo: title.trim(),
+          descripcion: description.trim() || category.trim(),
+          objetivo: learningObjective.trim() || null,
+          nivelDificultad: backendDifficulty[difficulty],
+          duracionEstimada: durationMinutes,
+        },
+        scene: {
+          orden: 1,
+          titulo: patientName.trim() || "Primera escena",
+          descripcion: setting.trim() || null,
+          contenido: narrative.trim(),
+          activo: true,
+        },
+        question: {
+          enunciado: "Selecciona la intervencion clinica inicial.",
+          obligatoria: true,
+          activo: true,
+        },
+        options: [
+          {
+            texto: optionExplore.trim(),
+            descripcion: "Exploracion inicial del motivo de consulta.",
+            orden: 1,
+            activo: true,
+          },
+          {
+            texto: optionAssess.trim(),
+            descripcion: "Evaluacion clinica inicial.",
+            orden: 2,
+            activo: true,
+          },
+        ],
       });
 
-      addCase(bundle);
-      void queryInvalidation.cases(queryClient);
-      router.push(`/simulator/${bundle.case.id}`);
+      router.push(`/simulator/${bundle.caso.id}`);
     } catch {
       setError("No se pudo guardar el caso. Intenta de nuevo.");
       setSaving(false);

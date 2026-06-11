@@ -1,6 +1,7 @@
 package com.agora.modules.simulation.controller;
 
 import com.agora.modules.simulation.dto.AttemptSummaryResponse;
+import com.agora.modules.simulation.dto.AttemptResponse;
 import com.agora.modules.simulation.dto.CreateFeedbackRequest;
 import com.agora.modules.simulation.dto.CreateJournalRequest;
 import com.agora.modules.simulation.dto.FeedbackResponse;
@@ -8,6 +9,7 @@ import com.agora.modules.simulation.dto.JournalResponse;
 import com.agora.modules.simulation.dto.UpdateJournalRequest;
 import com.agora.modules.simulation.service.AttemptFeedbackService;
 import com.agora.modules.simulation.service.AttemptJournalService;
+import com.agora.modules.simulation.service.AttemptQueryService;
 import com.agora.modules.simulation.service.AttemptSummaryService;
 import com.agora.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,6 +19,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -40,6 +44,22 @@ public class AttemptController {
     private final AttemptJournalService journalService;
     private final AttemptFeedbackService feedbackService;
     private final AttemptSummaryService summaryService;
+    private final AttemptQueryService queryService;
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE','ESTUDIANTE')")
+    @Operation(summary = "List attempts visible to the authenticated user")
+    public Page<AttemptResponse> listar(@AuthenticationPrincipal UserPrincipal principal, Pageable pageable) {
+        return queryService.listar(principal, pageable);
+    }
+
+    @GetMapping("/{attemptId}")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE','ESTUDIANTE')")
+    @Operation(summary = "Get an attempt by id")
+    public AttemptResponse obtener(@PathVariable Long attemptId,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return queryService.obtener(attemptId, principal);
+    }
 
     @PostMapping("/{attemptId}/journal")
     @ResponseStatus(HttpStatus.CREATED)

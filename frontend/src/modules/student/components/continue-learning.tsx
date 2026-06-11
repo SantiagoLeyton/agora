@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Surface, SectionHeader } from "@/components/design-system";
-import { mockCases } from "@/mocks";
+import { useCases } from "@/hooks/use-data";
 import { cn } from "@/lib/utils";
 
 const statusConfig = {
@@ -17,7 +17,10 @@ const statusConfig = {
 };
 
 export function ContinueLearning() {
-  const activeCases = mockCases.filter((c) => c.status !== "completed").slice(0, 3);
+  const { data: cases } = useCases();
+  const activeCases = (cases ?? [])
+    .filter((caseItem) => caseItem.status !== "completed")
+    .slice(0, 3);
 
   return (
     <Surface>

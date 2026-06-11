@@ -14,9 +14,9 @@ import {
   PageLoading,
 } from "@/components/design-system";
 import { PatientModelPicker } from "@/components/simulator/PatientModelPicker";
-import { useCase } from "@/hooks/use-data";
-import { mockScenes } from "@/mocks";
-import { useCasesCatalogStore } from "@/store/cases-catalog";
+import { useCase, useCaseBuilder, useStartSimulation } from "@/hooks/use-data";
+import { mapSimulationToSession } from "@/lib/case-adapters";
+import { simulationService } from "@/services/simulation-service";
 import { useSimulatorStore } from "@/store";
 import type { PatientLive2DModel } from "@/types";
 
@@ -34,31 +34,37 @@ export default function CaseDetailPage({ params }: CaseDetailPageProps) {
   const { caseId } = use(params);
   const router = useRouter();
   const { data: caseItem, isLoading } = useCase(caseId);
+  const { data: builder, isLoading: isBuilderLoading } = useCaseBuilder(caseId);
   const session = useSimulatorStore((s) => s.session);
-  const startSession = useSimulatorStore((s) => s.startSession);
-  const customScenes = useCasesCatalogStore((s) => s.customScenes);
+  const setSession = useSimulatorStore((s) => s.setSession);
+  const startSimulation = useStartSimulation();
 
   const firstSceneId = useMemo(() => {
-    const scenes = mockScenes[caseId] ?? customScenes[caseId] ?? [];
-    return scenes[0]?.id;
-  }, [caseId, customScenes]);
+    return builder?.escenas.find(({ escena }) => escena.activo)?.escena.id;
+  }, [builder]);
 
   const canContinue =
     session?.caseId === caseId &&
     !!session.patientModel &&
-    !!firstSceneId;
+    !!session.attemptId &&
+    session.status === "EN_PROCESO";
 
   const [selectedModel, setSelectedModel] = useState<PatientLive2DModel | null>(
     caseItem?.patientModel ?? null
   );
 
-  const handleStart = () => {
-    if (!selectedModel || !firstSceneId) return;
-    startSession(caseId, firstSceneId, selectedModel);
+  const handleStart = async () => {
+    if (!selectedModel || !firstSceneId || !builder) return;
+    const started = await startSimulation.mutateAsync({ casoId: Number(caseId) });
+    const [simulation, summary] = await Promise.all([
+      simulationService.detail(started.intentoId),
+      simulationService.summary(started.intentoId),
+    ]);
+    setSession(mapSimulationToSession(simulation, builder, selectedModel, summary));
     router.push(`/simulator/${caseId}/play`);
   };
 
-  if (isLoading) return <PageLoading />;
+  if (isLoading || isBuilderLoading) return <PageLoading />;
 
   if (!caseItem) {
     return (
@@ -92,7 +98,7 @@ export default function CaseDetailPage({ params }: CaseDetailPageProps) {
           ) : (
             <Button
               size="lg"
-              disabled={!selectedModel || !firstSceneId}
+              disabled={!selectedModel || !firstSceneId || startSimulation.isPending}
               onClick={handleStart}
             >
               <Play className="h-4 w-4" />
@@ -153,7 +159,7 @@ export default function CaseDetailPage({ params }: CaseDetailPageProps) {
           <Button
             className="mt-4"
             variant="outline"
-            disabled={!selectedModel || !firstSceneId}
+            disabled={!selectedModel || !firstSceneId || startSimulation.isPending}
             onClick={handleStart}
           >
             Reiniciar simulación

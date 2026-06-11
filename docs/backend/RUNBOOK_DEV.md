@@ -24,7 +24,7 @@ docker compose --profile full up -d --build backend
 Configurar variables:
 
 ```powershell
-$env:JWT_SECRET="replace-with-a-base64-encoded-secret-of-at-least-32-bytes"
+$env:JWT_SECRET=[Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
 $env:DB_HOST="localhost"
 $env:DB_PORT="5432"
 $env:DB_NAME="agora"
@@ -38,6 +38,9 @@ Luego:
 cd backend
 ./mvnw spring-boot:run
 ```
+
+`JWT_SECRET` debe ser un valor Base64 o Base64URL que decodifique a minimo 32 bytes.
+El perfil `dev` incluye un fallback local para facilitar el arranque, pero no debe usarse en produccion.
 
 ## URLs utiles
 

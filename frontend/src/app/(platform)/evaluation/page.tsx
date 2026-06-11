@@ -17,10 +17,14 @@ export default function EvaluationPage() {
   const { data: evaluations, isLoading } = useEvaluations();
   const meta = getPageHeroMeta("/evaluation");
 
+  const scoredEvaluations = evaluations?.filter((e) => e.score !== null) ?? [];
   const avgScore =
-    evaluations && evaluations.length > 0
-      ? Math.round(evaluations.reduce((s, e) => s + e.score, 0) / evaluations.length)
-      : 0;
+    scoredEvaluations.length > 0
+      ? Math.round(
+          scoredEvaluations.reduce((s, e) => s + (e.score ?? 0), 0) /
+            scoredEvaluations.length
+        )
+      : null;
 
   return (
     <div className="space-y-8">
@@ -33,8 +37,15 @@ export default function EvaluationPage() {
           evaluations && evaluations.length > 0
             ? [
                 { label: "Evaluaciones", value: evaluations.length },
-                { label: "Promedio", value: `${avgScore}%` },
-                { label: "Última", value: evaluations[0]?.score ?? 0, hint: "Puntuación %" },
+                { label: "Promedio", value: avgScore === null ? "N/D" : `${avgScore}%` },
+                {
+                  label: "Última",
+                  value:
+                    evaluations[0]?.score === null
+                      ? "N/D"
+                      : evaluations[0]?.score ?? "N/D",
+                  hint: "Puntuación %",
+                },
               ]
             : undefined
         }
@@ -42,7 +53,7 @@ export default function EvaluationPage() {
           evaluations && evaluations.length > 0 ? (
             <InsightHighlight
               label="Promedio de competencias"
-              value={`${avgScore}%`}
+              value={avgScore === null ? "N/D" : `${avgScore}%`}
               sublabel={`${evaluations.length} evaluaciones`}
             />
           ) : undefined

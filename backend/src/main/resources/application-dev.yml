@@ -11,3 +11,6 @@ logging:
     com.agora: DEBUG
     org.flywaydb: INFO
 
+security:
+  jwt:
+    secret: ${JWT_SECRET:AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=}

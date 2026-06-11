@@ -22,7 +22,7 @@ export function StudentTable({ students }: StudentTableProps) {
   return (
     <DataTable<Student>
       data={students}
-      keyExtractor={(s) => s.id}
+      keyExtractor={(s) => `${s.email}-${s.group}`}
       emptyMessage="No hay estudiantes registrados"
       columns={[
         {

@@ -7,11 +7,11 @@ import { getRoleHomePath } from "@/lib/auth";
 
 export function useAuthRedirect() {
   const router = useRouter();
-  const { isAuthenticated, user } = useAuthStore();
+  const { hasHydrated, isAuthenticated, isLoading, user } = useAuthStore();
 
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (hasHydrated && !isLoading && isAuthenticated && user) {
       router.replace(getRoleHomePath(user.role));
     }
-  }, [isAuthenticated, user, router]);
+  }, [hasHydrated, isAuthenticated, isLoading, user, router]);
 }

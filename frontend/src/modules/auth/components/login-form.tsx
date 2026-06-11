@@ -10,7 +10,8 @@ import { SessionLogo } from "@/components/shared/session-logo";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { SplashScreen } from "@/components/shared/splash-screen";
 import { useAuthStore } from "@/store";
-import { getRoleHomePath, DEMO_ACCOUNTS } from "@/lib/auth";
+import { getRoleHomePath, PREVIEW_ACCOUNTS } from "@/lib/auth";
+import { ApiError } from "@/services/api-error";
 import { BRAND } from "@/lib/branding";
 import { useAuthRedirect } from "@/hooks/use-auth-redirect";
 import { cn } from "@/lib/utils";
@@ -36,8 +37,8 @@ export function LoginForm() {
   useAuthRedirect();
   const router = useRouter();
   const login = useAuthStore((s) => s.login);
-  const [email, setEmail] = useState("docente@uni.edu");
-  const [password, setPassword] = useState("password");
+  const [email, setEmail] = useState("docente@agora.com");
+  const [password, setPassword] = useState("Agora12345*");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -45,18 +46,22 @@ export function LoginForm() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const user = await login(email, password);
-    if (user) {
+    try {
+      const user = await login(email, password);
       router.push(getRoleHomePath(user.role));
-    } else {
-      setError("Credenciales inválidas. Verifica tu correo institucional.");
+    } catch (loginError) {
+      setError(
+        loginError instanceof ApiError
+          ? loginError.message
+          : "Credenciales inválidas. Verifica tu correo institucional."
+      );
       setLoading(false);
     }
   };
 
   const fillDemo = (demoEmail: string) => {
     setEmail(demoEmail);
-    setPassword("password");
+    setPassword("Agora12345*");
     setError("");
   };
 
@@ -234,7 +239,7 @@ export function LoginForm() {
                 Vista previa · selecciona un perfil
               </p>
               <div className="flex justify-center gap-1.5">
-                {DEMO_ACCOUNTS.map((account) => (
+                {PREVIEW_ACCOUNTS.map((account) => (
                   <button
                     key={account.email}
                     type="button"

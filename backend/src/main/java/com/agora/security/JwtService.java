@@ -2,6 +2,7 @@ package com.agora.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.DecodingException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import java.time.Clock;
@@ -26,7 +27,7 @@ public class JwtService {
     JwtService(JwtProperties properties, Clock clock) {
         this.properties = properties;
         this.clock = clock;
-        this.signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(properties.secret()));
+        this.signingKey = Keys.hmacShaKeyFor(decodeSecret(properties.secret()));
     }
 
     public String generateAccessToken(UserPrincipal principal) {
@@ -59,5 +60,20 @@ public class JwtService {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    private byte[] decodeSecret(String secret) {
+        String trimmedSecret = secret.trim();
+        try {
+            return Decoders.BASE64.decode(trimmedSecret);
+        } catch (DecodingException standardBase64Exception) {
+            try {
+                return Decoders.BASE64URL.decode(trimmedSecret);
+            } catch (DecodingException base64UrlException) {
+                throw new IllegalArgumentException(
+                        "security.jwt.secret must be a Base64 or Base64URL encoded value with at least 32 bytes",
+                        base64UrlException);
+            }
+        }
     }
 }

@@ -13,17 +13,17 @@ interface PlatformLayoutProps {
 
 export function PlatformLayout({ children }: PlatformLayoutProps) {
   const router = useRouter();
-  const { isAuthenticated, user } = useAuthStore();
+  const { hasHydrated, isAuthenticated, isLoading, user } = useAuthStore();
 
   useRoleGuard();
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (hasHydrated && !isLoading && !isAuthenticated) {
       router.replace("/login");
     }
-  }, [isAuthenticated, router]);
+  }, [hasHydrated, isAuthenticated, isLoading, router]);
 
-  if (!isAuthenticated || !user) {
+  if (!hasHydrated || isLoading || !isAuthenticated || !user) {
     return <SplashScreen message="Verificando acceso institucional..." />;
   }
 

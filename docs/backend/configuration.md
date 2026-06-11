@@ -8,3 +8,7 @@ The backend uses `application.yml` for common defaults and profile-specific file
 
 Secrets must be supplied through environment variables. They must never be committed.
 
+`JWT_SECRET` must be Base64 or Base64URL encoded and decode to at least 32 bytes.
+The `dev` profile provides a local fallback secret only to keep developer startup simple.
+Production deployments must always inject a private `JWT_SECRET` value.
+

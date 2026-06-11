@@ -40,6 +40,8 @@ Valores locales por defecto:
 - `Usuario.passwordHash` no se expone en DTOs.
 - Los tokens no se registran en logs por servicios propios.
 - La coleccion Postman no incluye secretos reales.
+- `JWT_SECRET` debe ser Base64 o Base64URL y decodificar a minimo 32 bytes.
+- El fallback JWT del perfil `dev` es solo para desarrollo local; produccion debe inyectar un secreto privado por entorno.
 
 ## Recomendaciones pendientes
 

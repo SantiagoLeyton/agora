@@ -1,30 +1,27 @@
 import type { User, UserRole } from "@/types";
 
-export const INSTITUTION_NAME = "Universidad Evangélica";
+export const INSTITUTION_NAME = "Universidad Evangelica";
 
-const MOCK_USERS: Record<string, Omit<User, "id"> & { password: string }> = {
-  "estudiante@uni.edu": {
-    email: "estudiante@uni.edu",
-    name: "Ana Martínez",
+export const PREVIEW_ACCOUNTS: Array<Omit<User, "id">> = [
+  {
+    email: "estudiante@agora.com",
+    name: "Estudiante Agora",
     role: "student",
     institution: INSTITUTION_NAME,
-    password: "password",
   },
-  "docente@uni.edu": {
-    email: "docente@uni.edu",
-    name: "Dr. Carlos Mendoza",
+  {
+    email: "docente@agora.com",
+    name: "Docente Agora",
     role: "teacher",
     institution: INSTITUTION_NAME,
-    password: "password",
   },
-  "admin@uni.edu": {
-    email: "admin@uni.edu",
-    name: "Laura Administradora",
+  {
+    email: "admin@agora.com",
+    name: "Admin Agora",
     role: "admin",
     institution: INSTITUTION_NAME,
-    password: "password",
   },
-};
+];
 
 export function getRoleHomePath(role: UserRole): string {
   switch (role) {
@@ -48,23 +45,6 @@ export function getRoleLabel(role: UserRole): string {
   }
 }
 
-export function authenticateMockUser(
-  email: string,
-  password: string
-): User | null {
-  const normalized = email.trim().toLowerCase();
-  const account = MOCK_USERS[normalized];
-  if (!account || account.password !== password) return null;
-
-  return {
-    id: `usr-${account.role}`,
-    email: account.email,
-    name: account.name,
-    role: account.role,
-    institution: account.institution,
-  };
-}
-
 const ROLE_PREFIXES: Record<UserRole, string[]> = {
   student: ["/dashboard", "/simulator", "/evaluation"],
   teacher: ["/teacher", "/simulator", "/evaluation"],
@@ -80,7 +60,3 @@ export function isPathAllowedForRole(pathname: string, role: UserRole): boolean 
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
 }
-
-export const DEMO_ACCOUNTS = Object.values(MOCK_USERS).map(
-  ({ password: _, ...user }) => user
-);

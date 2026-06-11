@@ -17,9 +17,14 @@ interface EvaluationOverviewProps {
 }
 
 export function EvaluationOverview({ evaluations }: EvaluationOverviewProps) {
-  const avgScore = Math.round(
-    evaluations.reduce((s, e) => s + e.score, 0) / evaluations.length
-  );
+  const scoredEvaluations = evaluations.filter((e) => e.score !== null);
+  const avgScore =
+    scoredEvaluations.length > 0
+      ? Math.round(
+          scoredEvaluations.reduce((s, e) => s + (e.score ?? 0), 0) /
+            scoredEvaluations.length
+        )
+      : null;
   const latest = evaluations[0];
 
   return (
@@ -27,7 +32,9 @@ export function EvaluationOverview({ evaluations }: EvaluationOverviewProps) {
       <Surface className="relative overflow-hidden lg:col-span-1">
         <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-success/10 blur-2xl" />
         <p className="text-sm font-medium text-muted-foreground">Evolución formativa</p>
-        <p className="mt-1 font-display text-4xl font-semibold tabular-nums">{avgScore}%</p>
+        <p className="mt-1 font-display text-4xl font-semibold tabular-nums">
+          {avgScore === null ? "N/D" : `${avgScore}%`}
+        </p>
         <p className="mt-2 flex items-center gap-1 text-xs text-success">
           <TrendingUp className="h-3 w-3" />
           Progreso sostenido en el semestre
@@ -46,7 +53,10 @@ export function EvaluationOverview({ evaluations }: EvaluationOverviewProps) {
                 {format(new Date(latest.completedAt), "d 'de' MMMM, yyyy", { locale: es })}
               </p>
             </div>
-            <InsightHighlight label="Puntuación clínica" value={`${latest.score}%`} />
+            <InsightHighlight
+              label="Puntuación clínica"
+              value={latest.score === null ? "N/D" : `${latest.score}%`}
+            />
           </div>
           <p className="mt-4 border-l-2 border-primary/25 pl-4 text-sm leading-relaxed text-muted-foreground">
             {latest.feedback[0]}
@@ -70,7 +80,13 @@ interface EvaluationCardProps {
 
 export function EvaluationCard({ result, index }: EvaluationCardProps) {
   const scoreColor =
-    result.score >= 80 ? "text-success" : result.score >= 60 ? "text-foreground" : "text-warning";
+    result.score === null
+      ? "text-muted-foreground"
+      : result.score >= 80
+        ? "text-success"
+        : result.score >= 60
+          ? "text-foreground"
+          : "text-warning";
 
   return (
     <motion.article
@@ -95,14 +111,14 @@ export function EvaluationCard({ result, index }: EvaluationCardProps) {
               </div>
             </div>
             <p className={cn("font-display text-2xl font-semibold tabular-nums", scoreColor)}>
-              {result.score}%
+              {result.score === null ? "N/D" : `${result.score}%`}
             </p>
           </div>
         </div>
 
         <div className="space-y-4 p-5">
           <div className="grid grid-cols-2 gap-2">
-            {result.metrics.slice(0, 4).map((metric) => (
+            {result.metrics.length > 0 ? result.metrics.slice(0, 4).map((metric) => (
               <div key={metric.id} className="rounded-lg border border-border/40 bg-muted/15 p-3">
                 <div className="flex justify-between text-xs">
                   <span className="text-muted-foreground line-clamp-1">{metric.label}</span>
@@ -110,7 +126,11 @@ export function EvaluationCard({ result, index }: EvaluationCardProps) {
                 </div>
                 <Progress value={metric.value} className="mt-2 h-1" />
               </div>
-            ))}
+            )) : (
+              <div className="col-span-2 rounded-lg border border-border/40 bg-muted/15 p-3 text-xs text-muted-foreground">
+                Sin métricas cuantitativas registradas.
+              </div>
+            )}
           </div>
 
           <div className="rounded-lg bg-primary/[0.04] p-3">
@@ -123,6 +143,7 @@ export function EvaluationCard({ result, index }: EvaluationCardProps) {
             </p>
           </div>
 
+          {result.strengths.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {result.strengths.slice(0, 2).map((s) => (
               <Badge key={s} variant="success" className="text-[10px] font-normal">
@@ -130,6 +151,7 @@ export function EvaluationCard({ result, index }: EvaluationCardProps) {
               </Badge>
             ))}
           </div>
+          )}
 
           <Button asChild variant="outline" size="sm" className="w-full">
             <Link href={`/evaluation/results/${result.id}`}>
@@ -144,6 +166,14 @@ export function EvaluationCard({ result, index }: EvaluationCardProps) {
 }
 
 export function MetricsOverview({ metrics }: { metrics: EvaluationResult["metrics"] }) {
+  if (metrics.length === 0) {
+    return (
+      <Surface variant="muted" className="py-10 text-center text-sm text-muted-foreground">
+        Sin métricas cuantitativas registradas para este intento.
+      </Surface>
+    );
+  }
+
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       {metrics.map((metric, index) => (

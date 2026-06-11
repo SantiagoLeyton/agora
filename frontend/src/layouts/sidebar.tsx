@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { motion, LayoutGroup } from "framer-motion";
 import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,7 @@ import { tokens } from "@/styles/tokens";
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user, logout } = useAuthStore();
   const { sidebarCollapsed, setSidebarCollapsed } = useUIStore();
 
@@ -161,8 +163,9 @@ export function Sidebar() {
             "w-full text-muted-foreground hover:bg-muted/50 hover:text-foreground",
             !sidebarCollapsed && "justify-start"
           )}
-          onClick={() => {
-            logout();
+          onClick={async () => {
+            await logout();
+            queryClient.clear();
             router.push("/login");
           }}
         >

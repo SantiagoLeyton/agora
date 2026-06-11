@@ -8,13 +8,14 @@ import { useAuthStore } from "@/store";
 export function useRoleGuard() {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, isAuthenticated } = useAuthStore();
+  const { hasHydrated, isAuthenticated, isLoading, user } = useAuthStore();
 
   useEffect(() => {
+    if (!hasHydrated || isLoading) return;
     if (!isAuthenticated || !user) return;
 
     if (!isPathAllowedForRole(pathname, user.role)) {
       router.replace(getRoleHomePath(user.role));
     }
-  }, [isAuthenticated, user, pathname, router]);
+  }, [hasHydrated, isAuthenticated, isLoading, user, pathname, router]);
 }

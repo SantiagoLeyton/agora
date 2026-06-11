@@ -1,4 +1,5 @@
 import type { SimulationSession, Scene, DialogueOption } from "@/types";
+import { mapStatesToEmotionalProfile } from "@/lib/case-adapters";
 
 export interface EmotionalProfile {
   anxiety: number;
@@ -140,6 +141,11 @@ export function getEmotionalProfile(
   sceneId?: string,
   caseId?: string
 ): EmotionalProfile {
+  const backendProfile = mapStatesToEmotionalProfile(session?.states);
+  if (backendProfile) {
+    return backendProfile;
+  }
+
   const n = session?.decisions.length ?? 0;
   const base =
     caseEmotionalBaselines[caseId ?? ""] ??

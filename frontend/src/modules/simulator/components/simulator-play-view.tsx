@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -12,6 +12,16 @@ import { ClinicalSessionSidebar } from "@/components/simulator/ClinicalSessionSi
 import { ClinicalSessionFooter } from "@/components/simulator/ClinicalSessionFooter";
 import { DecisionPanel } from "@/modules/simulator/components/decision-panel";
 import { useSimulatorStore, useAuthStore } from "@/store";
+import {
+  useAttemptSummary,
+  useCaseBuilder,
+  useAnswerSimulation,
+  useFinishSimulation,
+  useSimulation,
+  useStartSimulation,
+} from "@/hooks/use-data";
+import { mapBuilderToScenes, mapSimulationToSession } from "@/lib/case-adapters";
+import { simulationService } from "@/services/simulation-service";
 import { getEmotionalProfile } from "@/lib/simulator-clinical";
 import {
   mapProfileToLive2dExpression,
@@ -35,9 +45,7 @@ import {
   buildPatientParticipant,
   buildPsychologistParticipant,
 } from "@/lib/session-participants";
-import { mockScenes } from "@/mocks";
 import { PatientModelPicker } from "@/components/simulator/PatientModelPicker";
-import { useCasesCatalogStore } from "@/store/cases-catalog";
 import type { DialogueOption, PatientLive2DModel, PsychologistVisualState, SimulationCase } from "@/types";
 import { tokens } from "@/styles/tokens";
 
@@ -64,44 +72,113 @@ interface SimulatorPlayViewProps {
 export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
-  const { session, startSession, selectOption } = useSimulatorStore();
+  const { session, setSession } = useSimulatorStore();
   const [interactionNonce, setInteractionNonce] = useState(0);
+  const finishRequestedRef = useRef(false);
 
-  const customScenes = useCasesCatalogStore((s) => s.customScenes);
+  const activeAttemptId =
+    session?.caseId === caseItem.id ? session.attemptId : undefined;
+  const { data: builder, isLoading: isBuilderLoading } = useCaseBuilder(caseItem.id);
+  const { data: simulation } = useSimulation(activeAttemptId);
+  const { data: summary } = useAttemptSummary(activeAttemptId);
+  const startSimulation = useStartSimulation();
+  const answerSimulation = useAnswerSimulation(activeAttemptId ?? 0);
+  const finishSimulation = useFinishSimulation(activeAttemptId ?? 0);
+
   const scenes = useMemo(
-    () => mockScenes[caseItem.id] ?? customScenes[caseItem.id] ?? [],
-    [caseItem.id, customScenes]
+    () => (builder ? mapBuilderToScenes(builder, summary) : []),
+    [builder, summary]
   );
   const [pendingModel, setPendingModel] = useState<PatientLive2DModel | null>(null);
 
   const needsModelChoice =
-    scenes.length > 0 &&
     (!session ||
       session.caseId !== caseItem.id ||
+      !session.attemptId ||
       !session.patientModel);
 
   const patientModel: PatientLive2DModel | null = needsModelChoice
     ? null
     : (session?.patientModel ?? null);
-  const currentScene = useMemo(
+  useEffect(() => {
+    if (!simulation || !builder || !session?.patientModel) return;
+    if (finishRequestedRef.current && simulation.intento.estado === "EN_PROCESO") {
+      return;
+    }
+    setSession(
+      mapSimulationToSession(simulation, builder, session.patientModel, summary)
+    );
+  }, [builder, session?.patientModel, setSession, simulation, summary]);
+
+  useEffect(() => {
+    if (
+      !simulation ||
+      !builder ||
+      !session?.patientModel ||
+      !activeAttemptId ||
+      simulation.escenaActual ||
+      simulation.intento.estado !== "EN_PROCESO" ||
+      finishRequestedRef.current
+    ) {
+      return;
+    }
+
+    finishRequestedRef.current = true;
+    void finishSimulation.mutateAsync().then(async (finished) => {
+      const refreshedSummary = await simulationService.summary(activeAttemptId);
+      setSession(
+        mapSimulationToSession(
+          finished,
+          builder,
+          session.patientModel,
+          refreshedSummary
+        )
+      );
+    });
+  }, [
+    activeAttemptId,
+    builder,
+    finishSimulation,
+    session?.patientModel,
+    setSession,
+    simulation,
+  ]);
+
+  const backendCurrentScene = useMemo(
     () => scenes.find((s) => s.id === session?.currentSceneId),
     [scenes, session?.currentSceneId]
   );
 
+  const isComplete =
+    session?.status === "FINALIZADO" ||
+    (!!session?.attemptId &&
+      session.caseId === caseItem.id &&
+      !session.currentSceneId &&
+      !needsModelChoice);
+
+  const currentScene = backendCurrentScene ?? (isComplete ? scenes.at(-1) : undefined);
+
   const progress = useMemo(() => {
-    if (!session || scenes.length === 0) return 0;
+    if (!session || !builder) return 0;
+    if (session.status === "FINALIZADO") return 100;
     const decisionCount = session.decisions.length;
-    const estimatedTotal = Math.max(scenes.length - 1, 1);
-    return Math.min(Math.round((decisionCount / estimatedTotal) * 100), 100);
-  }, [session, scenes]);
+    const questionCount = builder.escenas.reduce(
+      (total, scene) =>
+        total +
+        scene.preguntas.filter(({ pregunta }) => pregunta.activo).length,
+      0
+    );
+    return Math.min(
+      Math.round((decisionCount / Math.max(questionCount, 1)) * 100),
+      100
+    );
+  }, [builder, session]);
 
   const emotionalProfile = useMemo(
     () =>
       getEmotionalProfile(session, session?.currentSceneId, caseItem.id),
     [session, caseItem.id]
   );
-
-  const isComplete = currentScene?.options.length === 0;
 
   const patientPedagogy = useMemo(
     () => buildPatientPedagogy(caseItem, emotionalProfile, currentScene),
@@ -229,16 +306,69 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
     [session, isComplete, emotionalProfile, dialogueTurns]
   );
 
-  const handleConfirmModel = () => {
-    if (!pendingModel || scenes.length === 0) return;
-    startSession(caseItem.id, scenes[0].id, pendingModel);
+  const handleConfirmModel = async () => {
+    if (!pendingModel || scenes.length === 0 || !builder) return;
+    const started = await startSimulation.mutateAsync({
+      casoId: Number(caseItem.id),
+    });
+    const [createdSimulation, createdSummary] = await Promise.all([
+      simulationService.detail(started.intentoId),
+      simulationService.summary(started.intentoId),
+    ]);
+    setSession(
+      mapSimulationToSession(
+        createdSimulation,
+        builder,
+        pendingModel,
+        createdSummary
+      )
+    );
   };
 
-  const handleSelect = (option: DialogueOption) => {
-    if (!session) return;
-    selectOption(session.currentSceneId, option.id, option.nextSceneId);
+  const handleSelect = async (option: DialogueOption) => {
+    if (!session?.attemptId || !option.questionId || !builder) return;
+    await answerSimulation.mutateAsync({
+      preguntaId: Number(option.questionId),
+      opcionId: Number(option.id),
+    });
+    const [updatedSimulation, updatedSummary] = await Promise.all([
+      simulationService.detail(session.attemptId),
+      simulationService.summary(session.attemptId),
+    ]);
+    if (
+      !updatedSimulation.escenaActual &&
+      updatedSimulation.intento.estado === "EN_PROCESO"
+    ) {
+      const finished = await finishSimulation.mutateAsync();
+      const finishedSummary = await simulationService.summary(session.attemptId);
+      setSession(
+        mapSimulationToSession(
+          finished,
+          builder,
+          session.patientModel,
+          finishedSummary
+        )
+      );
+    } else {
+      setSession(
+        mapSimulationToSession(
+          updatedSimulation,
+          builder,
+          session.patientModel,
+          updatedSummary
+        )
+      );
+    }
     setInteractionNonce((n) => n + 1);
   };
+
+  if (isBuilderLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   if (needsModelChoice) {
     return (
@@ -384,6 +514,7 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
               <DecisionPanel
                 options={currentScene.options}
                 onSelect={handleSelect}
+                disabled={answerSimulation.isPending || finishSimulation.isPending}
                 patientPedagogy={patientPedagogy}
                 sessionLog={sessionLog}
               />
@@ -402,6 +533,7 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
           <DecisionPanel
             options={currentScene.options}
             onSelect={handleSelect}
+            disabled={answerSimulation.isPending || finishSimulation.isPending}
             patientPedagogy={patientPedagogy}
             sessionLog={sessionLog}
           />

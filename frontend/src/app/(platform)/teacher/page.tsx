@@ -17,8 +17,8 @@ import { clinicalInsights } from "@/lib/clinical-copy";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ClinicalAvatar } from "@/components/design-system";
-import { mockTeacherStats, mockCases } from "@/mocks";
-import { useStudents, useAssignments } from "@/hooks/use-data";
+import { mockTeacherStats } from "@/mocks";
+import { useStudents, useAssignments, useCases } from "@/hooks/use-data";
 import { getPageHeroMeta } from "@/lib/page-meta";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -34,6 +34,7 @@ const teacherMetricIcons = {
 export default function TeacherDashboardPage() {
   const { data: students, isLoading } = useStudents();
   const { data: assignments } = useAssignments();
+  const { data: cases } = useCases();
   const meta = getPageHeroMeta("/teacher");
 
   return (
@@ -92,7 +93,7 @@ export default function TeacherDashboardPage() {
           ) : (
             <DataTable<Student>
               data={students?.slice(0, 5) ?? []}
-              keyExtractor={(s) => s.id}
+              keyExtractor={(s) => `${s.email}-${s.group}`}
               columns={[
                 {
                   key: "name",
@@ -157,7 +158,7 @@ export default function TeacherDashboardPage() {
           <Surface>
             <SectionHeader title="Casos publicados" />
             <div className="mt-4 space-y-2">
-              {mockCases.slice(0, 3).map((c) => (
+              {(cases ?? []).slice(0, 3).map((c) => (
                 <div key={c.id} className="flex justify-between rounded-lg border border-border/40 p-2.5 text-sm">
                   <span className="line-clamp-1 font-medium">{c.title}</span>
                   <Button asChild variant="ghost" size="sm" className="h-7 shrink-0">

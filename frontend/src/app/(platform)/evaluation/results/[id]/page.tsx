@@ -10,22 +10,13 @@ import {
   Surface,
   SectionHeader,
   CompetencyRadar,
-  CompetencyTrend,
   PageLoading,
   InsightHighlight,
 } from "@/components/design-system";
 import { MetricsOverview } from "@/modules/evaluation/components/evaluation-cards";
-import { useEvaluation } from "@/hooks/use-data";
+import { useEvaluation, useGenerateAISummary } from "@/hooks/use-data";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-
-const trendMock = [
-  { label: "Ene", value: 62 },
-  { label: "Feb", value: 68 },
-  { label: "Mar", value: 71 },
-  { label: "Abr", value: 74 },
-  { label: "May", value: 78 },
-];
 
 interface EvaluationResultPageProps {
   params: Promise<{ id: string }>;
@@ -34,6 +25,8 @@ interface EvaluationResultPageProps {
 export default function EvaluationResultPage({ params }: EvaluationResultPageProps) {
   const { id } = use(params);
   const { data: result, isLoading } = useEvaluation(id);
+  const attemptId = Number(id);
+  const generateAISummary = useGenerateAISummary(attemptId, id);
 
   if (isLoading) return <PageLoading />;
 
@@ -46,7 +39,13 @@ export default function EvaluationResultPage({ params }: EvaluationResultPagePro
   }
 
   const scoreVariant =
-    result.score >= 80 ? "success" : result.score >= 60 ? "warning" : "destructive";
+    result.score === null
+      ? "outline"
+      : result.score >= 80
+        ? "success"
+        : result.score >= 60
+          ? "warning"
+          : "destructive";
 
   return (
     <div className="space-y-8">
@@ -62,19 +61,29 @@ export default function EvaluationResultPage({ params }: EvaluationResultPagePro
         title={result.caseTitle}
         description={`Completado el ${format(new Date(result.completedAt), "d 'de' MMMM, yyyy", { locale: es })} · ${result.studentName}`}
         aside={
-          <InsightHighlight label="Puntuación clínica" value={`${result.score}%`} />
+          <InsightHighlight
+            label="Puntuación clínica"
+            value={result.score === null ? "N/D" : `${result.score}%`}
+          />
         }
         action={
           <Badge variant={scoreVariant} className="px-4 py-1.5 text-sm">
-            {result.score >= 80 ? "Desempeño destacado" : result.score >= 60 ? "En desarrollo" : "Requiere refuerzo"}
+            {result.score === null
+              ? "Sin puntuación cuantitativa"
+              : result.score >= 80
+                ? "Desempeño destacado"
+                : result.score >= 60
+                  ? "En desarrollo"
+                  : "Requiere refuerzo"}
           </Badge>
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <CompetencyRadar metrics={result.metrics} />
-        <CompetencyTrend data={trendMock} />
-      </div>
+      {result.metrics.length > 0 && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <CompetencyRadar metrics={result.metrics} />
+        </div>
+      )}
 
       <MetricsOverview metrics={result.metrics} />
 
@@ -85,12 +94,16 @@ export default function EvaluationResultPage({ params }: EvaluationResultPagePro
             description="Competencias clínicas observadas positivamente"
           />
           <ul className="mt-4 space-y-2.5">
-            {result.strengths.map((s) => (
+            {result.strengths.length > 0 ? result.strengths.map((s) => (
               <li key={s} className="flex items-center gap-2.5 text-sm">
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
                 {s}
               </li>
-            ))}
+            )) : (
+              <li className="text-sm text-muted-foreground">
+                Sin fortalezas estructuradas registradas por el backend.
+              </li>
+            )}
           </ul>
         </Surface>
 
@@ -100,12 +113,16 @@ export default function EvaluationResultPage({ params }: EvaluationResultPagePro
             description="Oportunidades formativas priorizadas"
           />
           <ul className="mt-4 space-y-2.5">
-            {result.improvements.map((s) => (
+            {result.improvements.length > 0 ? result.improvements.map((s) => (
               <li key={s} className="flex items-center gap-2.5 text-sm">
                 <AlertCircle className="h-4 w-4 shrink-0 text-warning" />
                 {s}
               </li>
-            ))}
+            )) : (
+              <li className="text-sm text-muted-foreground">
+                Sin áreas estructuradas registradas por el backend.
+              </li>
+            )}
           </ul>
         </Surface>
       </div>
@@ -115,6 +132,21 @@ export default function EvaluationResultPage({ params }: EvaluationResultPagePro
           title="Observaciones del supervisor"
           description="Retroalimentación clínica contextualizada"
         />
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <Button
+            size="sm"
+            disabled={generateAISummary.isPending || !Number.isFinite(attemptId)}
+            onClick={() => generateAISummary.mutate({})}
+          >
+            <Sparkles className="h-4 w-4" />
+            {generateAISummary.isPending ? "Generando resumen IA" : "Generar resumen IA"}
+          </Button>
+          {generateAISummary.isError && (
+            <p className="text-xs text-destructive">
+              No se pudo generar el resumen IA. Intenta nuevamente.
+            </p>
+          )}
+        </div>
         <div className="mt-4 space-y-4">
           {result.feedback.map((fb, i) => (
             <p

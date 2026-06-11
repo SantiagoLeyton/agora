@@ -44,6 +44,7 @@ export interface SimulationCase {
 
 export interface DialogueOption {
   id: string;
+  questionId?: string;
   label: string;
   description?: string;
   nextSceneId: string;
@@ -62,6 +63,9 @@ export interface Scene {
 }
 
 export interface SimulationSession {
+  attemptId?: number;
+  status?: "EN_PROCESO" | "FINALIZADO" | "ABANDONADO";
+  states?: import("@/types/simulation").SimulationStateResponse[];
   caseId: string;
   currentSceneId: string;
   /** Avatar elegido por el estudiante al iniciar */
@@ -85,11 +89,14 @@ export interface EvaluationResult {
   caseTitle: string;
   studentName: string;
   completedAt: string;
-  score: number;
+  score: number | null;
   metrics: EvaluationMetric[];
   feedback: string[];
   strengths: string[];
   improvements: string[];
+  attempt?: import("@/types/simulation").AttemptResponse;
+  summary?: import("@/types/simulation").AttemptSummaryResponse;
+  aiSummaries?: import("@/types/simulation").AISummaryResponse[];
 }
 
 export interface Student {

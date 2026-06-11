@@ -5,18 +5,24 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ClinicalAvatar } from "@/components/design-system";
 import { getPageHeroMeta } from "@/lib/page-meta";
+import { fullName } from "@/lib/academic-adapters";
+import { useRoles, useUsers } from "@/hooks/use-data";
 
-const mockUsers = [
-  { id: "1", name: "Ana Martínez", email: "ana.martinez@uni.edu", role: "student", status: "active" },
-  { id: "2", name: "Dr. Carlos Mendoza", email: "c.mendoza@uni.edu", role: "teacher", status: "active" },
-  { id: "3", name: "Laura Admin", email: "admin@uni.edu", role: "admin", status: "active" },
-  { id: "4", name: "Diego Morales", email: "diego.morales@uni.edu", role: "student", status: "inactive" },
-];
-
-const roleLabels = { student: "Estudiante", teacher: "Docente", admin: "Administrador" };
+const roleLabels = {
+  ESTUDIANTE: "Estudiante",
+  DOCENTE: "Docente",
+  ADMINISTRADOR: "Administrador",
+} as const;
 
 export default function AdminUsersPage() {
   const meta = getPageHeroMeta("/admin/users");
+  const { data: usersPage } = useUsers({ size: 100 });
+  const { data: roles = [] } = useRoles();
+  const users = usersPage?.content ?? [];
+  const getRoleLabel = (role: keyof typeof roleLabels) => {
+    const backendRole = roles.find((item) => item.nombre === role);
+    return backendRole ? roleLabels[backendRole.nombre] : roleLabels[role];
+  };
 
   return (
     <div className="space-y-8">
@@ -28,35 +34,39 @@ export default function AdminUsersPage() {
       />
 
       <DataTable
-        data={mockUsers}
-        keyExtractor={(u) => u.id}
+        data={users}
+        keyExtractor={(user) => String(user.id)}
         columns={[
           {
             key: "user",
             header: "Usuario",
-            cell: (u) => (
-              <div className="flex items-center gap-3">
-                <ClinicalAvatar name={u.name} tone="clinical" size="md" />
-                <div>
-                  <p className="font-medium">{u.name}</p>
-                  <p className="text-xs text-muted-foreground">{u.email}</p>
+            cell: (user) => {
+              const name = fullName(user.nombre, user.apellido);
+
+              return (
+                <div className="flex items-center gap-3">
+                  <ClinicalAvatar name={name} tone="clinical" size="md" />
+                  <div>
+                    <p className="font-medium">{name}</p>
+                    <p className="text-xs text-muted-foreground">{user.correo}</p>
+                  </div>
                 </div>
-              </div>
-            ),
+              );
+            },
           },
           {
             key: "role",
             header: "Rol",
-            cell: (u) => (
-              <Badge variant="outline">{roleLabels[u.role as keyof typeof roleLabels]}</Badge>
+            cell: (user) => (
+              <Badge variant="outline">{getRoleLabel(user.rol)}</Badge>
             ),
           },
           {
             key: "status",
             header: "Estado",
-            cell: (u) => (
-              <Badge variant={u.status === "active" ? "success" : "muted"}>
-                {u.status === "active" ? "Activo" : "Inactivo"}
+            cell: (user) => (
+              <Badge variant={user.activo ? "success" : "muted"}>
+                {user.activo ? "Activo" : "Inactivo"}
               </Badge>
             ),
           },

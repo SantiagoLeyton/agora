@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { LogOut, User, Settings } from "lucide-react";
 import {
   DropdownMenu,
@@ -19,6 +20,7 @@ import { cn } from "@/lib/utils";
 
 export function NavbarUserMenu({ className }: { className?: string }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user, logout } = useAuthStore();
 
   if (!user) return null;
@@ -79,8 +81,9 @@ export function NavbarUserMenu({ className }: { className?: string }) {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="text-destructive focus:text-destructive"
-          onClick={() => {
-            logout();
+          onClick={async () => {
+            await logout();
+            queryClient.clear();
             router.push("/login");
           }}
         >

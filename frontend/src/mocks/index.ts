@@ -1,4 +1,4 @@
-import type { SimulationCase, Scene, EvaluationResult, Student, Group, Assignment, DashboardStat } from "@/types";
+import type { SimulationCase, Scene, DashboardStat } from "@/types";
 
 export const mockCases: SimulationCase[] = [
   {
@@ -451,67 +451,6 @@ export const mockScenes: Record<string, Scene[]> = {
     },
   ],
 };
-
-export const mockEvaluationResults: EvaluationResult[] = [
-  {
-    id: "eval-001",
-    caseId: "case-crisis-003",
-    caseTitle: "Intervención en crisis suicida",
-    studentName: "Ana Martínez",
-    completedAt: "2026-05-20T14:30:00",
-    score: 87,
-    metrics: [
-      { id: "m1", label: "Empatía clínica", value: 90, maxValue: 100, description: "Capacidad de validación emocional" },
-      { id: "m2", label: "Evaluación de riesgo", value: 85, maxValue: 100, description: "Aplicación de protocolo" },
-      { id: "m3", label: "Toma de decisiones", value: 82, maxValue: 100, description: "Coherencia con evidencia" },
-      { id: "m4", label: "Comunicación terapéutica", value: 91, maxValue: 100, description: "Claridad y contención" },
-    ],
-    feedback: [
-      "Excelente manejo de la contención emocional inicial",
-      "Considera profundizar en la evaluación de factores protectores",
-    ],
-    strengths: ["Validación empática", "Uso de protocolo", "Comunicación clara"],
-    improvements: ["Exploración de red de apoyo", "Plan de seguimiento"],
-  },
-  {
-    id: "eval-002",
-    caseId: "case-anxiety-001",
-    caseTitle: "Ansiedad generalizada en contexto universitario",
-    studentName: "Ana Martínez",
-    completedAt: "2026-05-18T10:15:00",
-    score: 74,
-    metrics: [
-      { id: "m1", label: "Empatía clínica", value: 78, maxValue: 100, description: "Capacidad de validación emocional" },
-      { id: "m2", label: "Exploración clínica", value: 72, maxValue: 100, description: "Profundidad de indagación" },
-      { id: "m3", label: "Toma de decisiones", value: 70, maxValue: 100, description: "Coherencia con evidencia" },
-      { id: "m4", label: "Comunicación terapéutica", value: 76, maxValue: 100, description: "Claridad y contención" },
-    ],
-    feedback: [
-      "Buen inicio de la entrevista clínica",
-      "Se recomienda evitar intervenciones prematuras",
-    ],
-    strengths: ["Escucha activa", "Exploración de antecedentes"],
-    improvements: ["Timing de intervenciones", "Validación emocional"],
-  },
-];
-
-export const mockStudents: Student[] = [
-  { id: "s1", name: "Ana Martínez", email: "ana.martinez@uni.edu", group: "Grupo A — TCC", progress: 78, casesCompleted: 3, lastActivity: "2026-05-20", status: "active" },
-  { id: "s2", name: "Carlos Ruiz", email: "carlos.ruiz@uni.edu", group: "Grupo A — TCC", progress: 45, casesCompleted: 1, lastActivity: "2026-05-19", status: "at_risk" },
-  { id: "s3", name: "Laura Vega", email: "laura.vega@uni.edu", group: "Grupo B — Clínica", progress: 92, casesCompleted: 4, lastActivity: "2026-05-21", status: "active" },
-  { id: "s4", name: "Diego Morales", email: "diego.morales@uni.edu", group: "Grupo B — Clínica", progress: 23, casesCompleted: 0, lastActivity: "2026-05-10", status: "inactive" },
-];
-
-export const mockGroups: Group[] = [
-  { id: "g1", name: "Grupo A — TCC", studentsCount: 24, activeCases: 2, averageProgress: 68, semester: "2026-1" },
-  { id: "g2", name: "Grupo B — Clínica", studentsCount: 18, activeCases: 3, averageProgress: 74, semester: "2026-1" },
-  { id: "g3", name: "Grupo C — Crisis", studentsCount: 15, activeCases: 1, averageProgress: 55, semester: "2026-1" },
-];
-
-export const mockAssignments: Assignment[] = [
-  { id: "a1", title: "Simulación de ansiedad — Semana 4", caseId: "case-anxiety-001", caseTitle: "Ansiedad generalizada", groupId: "g1", groupName: "Grupo A — TCC", dueDate: "2026-05-30", completionRate: 62 },
-  { id: "a2", title: "Protocolo de crisis — Evaluación", caseId: "case-crisis-003", caseTitle: "Intervención en crisis", groupId: "g3", groupName: "Grupo C — Crisis", dueDate: "2026-06-05", completionRate: 40 },
-];
 
 export const mockDashboardStats: DashboardStat[] = [
   { label: "Casos completados", value: 12, change: "+3 este mes", trend: "up" },
