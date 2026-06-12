@@ -117,7 +117,7 @@ class AISummaryControllerIntegrationTest {
         Usuario student = usuarioRepository.save(new Usuario(studentRole, "Estudiante", "Agora",
                 "estudiante@agora.com", passwordEncoder.encode("Agora12345*")));
 
-        Caso caso = casoRepository.save(new Caso("Caso IA", "Desc", "Obj", "BASICO", 30));
+        Caso caso = casoRepository.save(new Caso("Caso IA", "Desc", "Obj", "BASICO", 30, null));
         Escena escena = escenaRepository.save(new Escena(caso, 1, "Escena", "Desc", "Contenido"));
         Pregunta pregunta = preguntaRepository.save(new Pregunta(escena, "Que haria?", true));
         opcionRepository.save(new Opcion(pregunta, "Dialogar", "Desc", 1));

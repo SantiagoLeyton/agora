@@ -7,6 +7,7 @@ import com.agora.modules.case_management.dto.QuestionResponse;
 import com.agora.modules.case_management.dto.SceneRequest;
 import com.agora.modules.case_management.dto.SceneResponse;
 import com.agora.modules.case_management.service.CaseContentService;
+import com.agora.security.SecurityExpressions;
 import com.agora.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -38,7 +39,7 @@ public class CaseContentController {
 
     @PostMapping("/api/v1/cases/{caseId}/scenes")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
     @Operation(summary = "Create a scene")
     public SceneResponse crearEscena(@PathVariable Long caseId, @Valid @RequestBody SceneRequest request,
             @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
@@ -46,7 +47,7 @@ public class CaseContentController {
     }
 
     @GetMapping("/api/v1/cases/{caseId}/scenes")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE','ESTUDIANTE')")
+    @PreAuthorize(SecurityExpressions.CASE_READER)
     @Operation(summary = "List scenes for a case")
     public List<SceneResponse> listarEscenas(@PathVariable Long caseId,
             @AuthenticationPrincipal UserPrincipal principal) {
@@ -54,7 +55,7 @@ public class CaseContentController {
     }
 
     @PutMapping("/api/v1/scenes/{id}")
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
     @Operation(summary = "Update a scene")
     public SceneResponse actualizarEscena(@PathVariable Long id, @Valid @RequestBody SceneRequest request,
             @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
@@ -63,7 +64,7 @@ public class CaseContentController {
 
     @DeleteMapping("/api/v1/scenes/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
     @Operation(summary = "Delete a scene")
     public void eliminarEscena(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest servletRequest) {
@@ -72,7 +73,7 @@ public class CaseContentController {
 
     @PostMapping("/api/v1/scenes/{sceneId}/questions")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
     @Operation(summary = "Create a question")
     public QuestionResponse crearPregunta(@PathVariable Long sceneId, @Valid @RequestBody QuestionRequest request,
             @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
@@ -80,14 +81,14 @@ public class CaseContentController {
     }
 
     @GetMapping("/api/v1/scenes/{sceneId}/questions")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE','ESTUDIANTE')")
+    @PreAuthorize(SecurityExpressions.CASE_READER)
     @Operation(summary = "List questions for a scene")
     public List<QuestionResponse> listarPreguntas(@PathVariable Long sceneId) {
         return contentService.listarPreguntas(sceneId);
     }
 
     @PutMapping("/api/v1/questions/{id}")
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
     @Operation(summary = "Update a question")
     public QuestionResponse actualizarPregunta(@PathVariable Long id, @Valid @RequestBody QuestionRequest request,
             @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
@@ -96,7 +97,7 @@ public class CaseContentController {
 
     @DeleteMapping("/api/v1/questions/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
     @Operation(summary = "Delete a question")
     public void eliminarPregunta(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest servletRequest) {
@@ -105,7 +106,7 @@ public class CaseContentController {
 
     @PostMapping("/api/v1/questions/{questionId}/options")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
     @Operation(summary = "Create an option")
     public OptionResponse crearOpcion(@PathVariable Long questionId, @Valid @RequestBody OptionRequest request,
             @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
@@ -113,14 +114,14 @@ public class CaseContentController {
     }
 
     @GetMapping("/api/v1/questions/{questionId}/options")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE','ESTUDIANTE')")
+    @PreAuthorize(SecurityExpressions.CASE_READER)
     @Operation(summary = "List options for a question")
     public List<OptionResponse> listarOpciones(@PathVariable Long questionId) {
         return contentService.listarOpciones(questionId);
     }
 
     @PutMapping("/api/v1/options/{id}")
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
     @Operation(summary = "Update an option")
     public OptionResponse actualizarOpcion(@PathVariable Long id, @Valid @RequestBody OptionRequest request,
             @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
@@ -129,7 +130,7 @@ public class CaseContentController {
 
     @DeleteMapping("/api/v1/options/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
     @Operation(summary = "Delete an option")
     public void eliminarOpcion(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest servletRequest) {

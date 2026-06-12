@@ -32,6 +32,11 @@ function nonEmpty(value: string | null | undefined, fallback: string): string {
 }
 
 export function mapCaseToSimulationCase(response: CaseResponse): SimulationCase {
+  const learningObjectives =
+    response.resultadosAprendizaje?.length > 0
+      ? response.resultadosAprendizaje.map((item) => item.descripcion)
+      : [nonEmpty(response.objetivo, "Objetivo pendiente de documentar.")];
+
   return {
     id: String(response.id),
     title: response.titulo,
@@ -42,8 +47,13 @@ export function mapCaseToSimulationCase(response: CaseResponse): SimulationCase 
     status: "not_started",
     progress: 0,
     tags: [response.nivelDificultad, response.activo ? "Activo" : "Inactivo"],
-    learningObjectives: [nonEmpty(response.objetivo, "Objetivo pendiente de documentar.")],
+    learningObjectives,
     patientModel: "haru",
+    authorId: response.creadorId != null ? String(response.creadorId) : undefined,
+    authorName: response.creadorNombre ?? undefined,
+    createdAt: response.fechaCreacion,
+    updatedAt: response.fechaActualizacion,
+    isActive: response.activo,
   };
 }
 

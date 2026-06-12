@@ -16,6 +16,12 @@ export const PREVIEW_ACCOUNTS: Array<Omit<User, "id">> = [
     institution: INSTITUTION_NAME,
   },
   {
+    email: "docente_admin@agora.com",
+    name: "Docente Admin Agora",
+    role: "teacher",
+    institution: INSTITUTION_NAME,
+  },
+  {
     email: "admin@agora.com",
     name: "Admin Agora",
     role: "admin",

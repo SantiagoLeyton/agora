@@ -110,7 +110,7 @@ class AttemptControllerIntegrationTest {
         usuarioRepository.save(new Usuario(studentRole, "Otra", "Estudiante", "otra@agora.com",
                 passwordEncoder.encode("Agora12345*")));
 
-        Caso caso = casoRepository.save(new Caso("Caso attempt", "Desc", "Obj", "BASICO", 30));
+        Caso caso = casoRepository.save(new Caso("Caso attempt", "Desc", "Obj", "BASICO", 30, null));
         Escena escena = escenaRepository.save(new Escena(caso, 1, "Escena", "Desc", "Contenido"));
         Pregunta pregunta = preguntaRepository.save(new Pregunta(escena, "Que haria?", true));
         Opcion opcion = opcionRepository.save(new Opcion(pregunta, "Acompanhar", "Desc", 1));

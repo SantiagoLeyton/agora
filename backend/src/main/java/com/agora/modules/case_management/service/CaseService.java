@@ -4,16 +4,21 @@ import com.agora.infrastructure.audit.OperationalAuditService;
 import com.agora.modules.case_management.domain.Caso;
 import com.agora.modules.case_management.domain.EntidadInstitucional;
 import com.agora.modules.case_management.domain.Herramienta;
+import com.agora.modules.case_management.domain.ResultadoAprendizaje;
 import com.agora.modules.case_management.dto.CaseRequest;
 import com.agora.modules.case_management.dto.CaseResponse;
+import com.agora.modules.case_management.dto.LearningOutcomeResponse;
 import com.agora.modules.case_management.repository.CasoRepository;
 import com.agora.modules.case_management.repository.EntidadInstitucionalRepository;
 import com.agora.modules.case_management.repository.HerramientaRepository;
+import com.agora.modules.case_management.repository.ResultadoAprendizajeRepository;
 import com.agora.modules.user.domain.Usuario;
 import com.agora.modules.user.repository.UsuarioRepository;
 import com.agora.security.UserPrincipal;
+import com.agora.shared.exception.BusinessRuleException;
 import com.agora.shared.exception.ResourceNotFoundException;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Subquery;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -34,26 +39,30 @@ public class CaseService {
     private final HerramientaRepository herramientaRepository;
     private final EntidadInstitucionalRepository entidadRepository;
     private final UsuarioRepository usuarioRepository;
+    private final ResultadoAprendizajeRepository resultadoRepository;
     private final OperationalAuditService auditService;
 
     @Transactional
     public CaseResponse crear(CaseRequest request, UserPrincipal principal, String ip) {
+        Usuario creador = buscarUsuario(principal.id());
         Caso caso = casoRepository.save(new Caso(request.titulo(), request.descripcion(), request.objetivo(),
-                request.nivelDificultad(), request.duracionEstimada()));
+                request.nivelDificultad(), request.duracionEstimada(), creador));
         audit(principal, "CASE_CREATED", "Caso creado: " + caso.getTitulo(), ip);
-        return CaseResponse.from(caso);
+        return enriquecer(caso);
     }
 
     @Transactional(readOnly = true)
-    public Page<CaseResponse> listar(Boolean activo, String search, UserPrincipal principal, Pageable pageable) {
-        return casoRepository.findAll(filtrar(activo, search, principal), pageable).map(CaseResponse::from);
+    public Page<CaseResponse> listar(Boolean activo, String search, String nivelDificultad, Long creadorId,
+            String rdaSearch, UserPrincipal principal, Pageable pageable) {
+        return casoRepository.findAll(filtrar(activo, search, nivelDificultad, creadorId, rdaSearch, principal), pageable)
+                .map(this::enriquecer);
     }
 
     @Transactional(readOnly = true)
     public CaseResponse consultar(Long id, UserPrincipal principal) {
         Caso caso = buscarCaso(id);
         validarLectura(caso, principal);
-        return CaseResponse.from(caso);
+        return enriquecer(caso);
     }
 
     @Transactional
@@ -62,7 +71,7 @@ public class CaseService {
         caso.actualizar(request.titulo(), request.descripcion(), request.objetivo(), request.nivelDificultad(),
                 request.duracionEstimada());
         audit(principal, "CASE_UPDATED", "Caso actualizado: " + caso.getTitulo(), ip);
-        return CaseResponse.from(casoRepository.save(caso));
+        return enriquecer(casoRepository.save(caso));
     }
 
     @Transactional
@@ -70,7 +79,7 @@ public class CaseService {
         Caso caso = buscarCaso(id);
         caso.activar();
         audit(principal, "CASE_ACTIVATED", "Caso activado: " + caso.getTitulo(), ip);
-        return CaseResponse.from(casoRepository.save(caso));
+        return enriquecer(casoRepository.save(caso));
     }
 
     @Transactional
@@ -78,7 +87,18 @@ public class CaseService {
         Caso caso = buscarCaso(id);
         caso.desactivar();
         audit(principal, "CASE_DEACTIVATED", "Caso desactivado: " + caso.getTitulo(), ip);
-        return CaseResponse.from(casoRepository.save(caso));
+        return enriquecer(casoRepository.save(caso));
+    }
+
+    @Transactional
+    public void eliminar(Long id, UserPrincipal principal, String ip) {
+        Caso caso = buscarCaso(id);
+        if (casoRepository.hasAttempts(id)) {
+            throw new BusinessRuleException(
+                    "No se puede eliminar el caso porque tiene intentos registrados. Desactivalo en su lugar.");
+        }
+        casoRepository.delete(caso);
+        audit(principal, "CASE_DELETED", "Caso eliminado: " + caso.getTitulo(), ip);
     }
 
     @Transactional
@@ -88,7 +108,17 @@ public class CaseService {
                 .orElseThrow(() -> new ResourceNotFoundException("Herramienta no encontrada"));
         caso.asociar(herramienta);
         audit(principal, "TOOL_LINKED", "Herramienta asociada al caso: " + herramienta.getId(), ip);
-        return CaseResponse.from(casoRepository.save(caso));
+        return enriquecer(casoRepository.save(caso));
+    }
+
+    @Transactional
+    public CaseResponse desasociarHerramienta(Long id, Long herramientaId, UserPrincipal principal, String ip) {
+        Caso caso = buscarCaso(id);
+        Herramienta herramienta = herramientaRepository.findById(herramientaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Herramienta no encontrada"));
+        caso.desasociar(herramienta);
+        audit(principal, "TOOL_UNLINKED", "Herramienta desasociada del caso: " + herramienta.getId(), ip);
+        return enriquecer(casoRepository.save(caso));
     }
 
     @Transactional
@@ -98,7 +128,17 @@ public class CaseService {
                 .orElseThrow(() -> new ResourceNotFoundException("Entidad institucional no encontrada"));
         caso.asociar(entidad);
         audit(principal, "ENTITY_LINKED", "Entidad asociada al caso: " + entidad.getId(), ip);
-        return CaseResponse.from(casoRepository.save(caso));
+        return enriquecer(casoRepository.save(caso));
+    }
+
+    @Transactional
+    public CaseResponse desasociarEntidad(Long id, Long entidadId, UserPrincipal principal, String ip) {
+        Caso caso = buscarCaso(id);
+        EntidadInstitucional entidad = entidadRepository.findById(entidadId)
+                .orElseThrow(() -> new ResourceNotFoundException("Entidad institucional no encontrada"));
+        caso.desasociar(entidad);
+        audit(principal, "ENTITY_UNLINKED", "Entidad desasociada del caso: " + entidad.getId(), ip);
+        return enriquecer(casoRepository.save(caso));
     }
 
     Caso buscarCaso(Long id) {
@@ -111,7 +151,16 @@ public class CaseService {
         }
     }
 
-    private Specification<Caso> filtrar(Boolean activo, String search, UserPrincipal principal) {
+    private CaseResponse enriquecer(Caso caso) {
+        List<LearningOutcomeResponse> resultados = resultadoRepository.findByCasoIdOrderByOrdenAsc(caso.getId())
+                .stream()
+                .map(LearningOutcomeResponse::from)
+                .toList();
+        return CaseResponse.from(caso, resultados);
+    }
+
+    private Specification<Caso> filtrar(Boolean activo, String search, String nivelDificultad, Long creadorId,
+            String rdaSearch, UserPrincipal principal) {
         return (root, query, builder) -> {
             List<Predicate> predicates = new ArrayList<>();
             if ("ESTUDIANTE".equals(principal.rol())) {
@@ -124,13 +173,31 @@ public class CaseService {
                 predicates.add(builder.or(builder.like(builder.lower(root.get("titulo")), pattern),
                         builder.like(builder.lower(root.get("descripcion")), pattern)));
             }
+            if (nivelDificultad != null && !nivelDificultad.isBlank()) {
+                predicates.add(builder.equal(builder.upper(root.get("nivelDificultad")),
+                        nivelDificultad.trim().toUpperCase()));
+            }
+            if (creadorId != null) {
+                predicates.add(builder.equal(root.get("creador").get("id"), creadorId));
+            }
+            if (rdaSearch != null && !rdaSearch.isBlank()) {
+                String pattern = "%" + rdaSearch.toLowerCase() + "%";
+                Subquery<Long> subquery = query.subquery(Long.class);
+                var rdaRoot = subquery.from(ResultadoAprendizaje.class);
+                subquery.select(rdaRoot.get("caso").get("id"));
+                subquery.where(builder.like(builder.lower(rdaRoot.get("descripcion")), pattern));
+                predicates.add(root.get("id").in(subquery));
+            }
             return builder.and(predicates.toArray(Predicate[]::new));
         };
     }
 
-    private void audit(UserPrincipal principal, String accion, String descripcion, String ip) {
-        Usuario actor = usuarioRepository.findById(principal.id())
+    private Usuario buscarUsuario(Long id) {
+        return usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario autenticado no encontrado"));
-        auditService.registrar(actor, accion, MODULE, descripcion, ip);
+    }
+
+    private void audit(UserPrincipal principal, String accion, String descripcion, String ip) {
+        auditService.registrar(buscarUsuario(principal.id()), accion, MODULE, descripcion, ip);
     }
 }

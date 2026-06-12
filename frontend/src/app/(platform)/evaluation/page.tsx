@@ -20,10 +20,10 @@ export default function EvaluationPage() {
   const scoredEvaluations = evaluations?.filter((e) => e.score !== null) ?? [];
   const avgScore =
     scoredEvaluations.length > 0
-      ? Math.round(
+      ? (
           scoredEvaluations.reduce((s, e) => s + (e.score ?? 0), 0) /
-            scoredEvaluations.length
-        )
+          scoredEvaluations.length
+        ).toFixed(1)
       : null;
 
   return (
@@ -37,14 +37,17 @@ export default function EvaluationPage() {
           evaluations && evaluations.length > 0
             ? [
                 { label: "Evaluaciones", value: evaluations.length },
-                { label: "Promedio", value: avgScore === null ? "N/D" : `${avgScore}%` },
+                {
+                  label: "Promedio",
+                  value: avgScore === null ? "Sin calificación" : `${avgScore} / 5`,
+                },
                 {
                   label: "Última",
                   value:
                     evaluations[0]?.score === null
-                      ? "N/D"
-                      : evaluations[0]?.score ?? "N/D",
-                  hint: "Puntuación %",
+                      ? "Sin calificación"
+                      : `${evaluations[0]?.score?.toFixed(1)} / 5`,
+                  hint: "Escala académica",
                 },
               ]
             : undefined
@@ -52,8 +55,8 @@ export default function EvaluationPage() {
         aside={
           evaluations && evaluations.length > 0 ? (
             <InsightHighlight
-              label="Promedio de competencias"
-              value={avgScore === null ? "N/D" : `${avgScore}%`}
+              label="Promedio académico"
+              value={avgScore === null ? "Sin calificación configurada" : `${avgScore} / 5`}
               sublabel={`${evaluations.length} evaluaciones`}
             />
           ) : undefined

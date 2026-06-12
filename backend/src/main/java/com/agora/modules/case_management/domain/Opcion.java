@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -39,17 +40,26 @@ public class Opcion {
     @Column(nullable = false)
     private boolean activo = true;
 
+    @Column(name = "porcentaje_credito", precision = 5, scale = 2)
+    private BigDecimal porcentajeCredito;
+
     public Opcion(Pregunta pregunta, String texto, String descripcion, Integer orden) {
+        this(pregunta, texto, descripcion, orden, null);
+    }
+
+    public Opcion(Pregunta pregunta, String texto, String descripcion, Integer orden, BigDecimal porcentajeCredito) {
         this.pregunta = pregunta;
         this.texto = texto;
         this.descripcion = descripcion;
         this.orden = orden;
+        this.porcentajeCredito = porcentajeCredito;
     }
 
-    public void actualizar(String texto, String descripcion, Integer orden, boolean activo) {
+    public void actualizar(String texto, String descripcion, Integer orden, boolean activo, BigDecimal porcentajeCredito) {
         this.texto = texto;
         this.descripcion = descripcion;
         this.orden = orden;
         this.activo = activo;
+        this.porcentajeCredito = porcentajeCredito;
     }
 }

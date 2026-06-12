@@ -14,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -51,6 +52,15 @@ public class Intento {
     @Column(nullable = false, length = 30)
     private SimulationStatus estado = SimulationStatus.EN_PROCESO;
 
+    @Column(name = "puntos_obtenidos", precision = 10, scale = 2)
+    private BigDecimal puntosObtenidos;
+
+    @Column(name = "puntos_maximos", precision = 10, scale = 2)
+    private BigDecimal puntosMaximos;
+
+    @Column(name = "nota_final", precision = 3, scale = 2)
+    private BigDecimal notaFinal;
+
     public Intento(Usuario estudiante, Caso caso, Programacion programacion) {
         this.estudiante = estudiante;
         this.caso = caso;
@@ -65,5 +75,11 @@ public class Intento {
     public void abandonar() {
         this.estado = SimulationStatus.ABANDONADO;
         this.fechaFin = Instant.now();
+    }
+
+    public void registrarCalificacion(BigDecimal puntosObtenidos, BigDecimal puntosMaximos, BigDecimal notaFinal) {
+        this.puntosObtenidos = puntosObtenidos;
+        this.puntosMaximos = puntosMaximos;
+        this.notaFinal = notaFinal;
     }
 }

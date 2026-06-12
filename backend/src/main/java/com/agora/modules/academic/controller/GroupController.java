@@ -4,6 +4,7 @@ import com.agora.modules.academic.dto.CreateGroupRequest;
 import com.agora.modules.academic.dto.GroupResponse;
 import com.agora.modules.academic.dto.UpdateGroupRequest;
 import com.agora.modules.academic.service.GroupService;
+import com.agora.security.SecurityExpressions;
 import com.agora.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -39,7 +40,7 @@ public class GroupController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.TEACHER_ACTIVITY)
     @Operation(summary = "Create an academic group owned by the authenticated teacher")
     public GroupResponse crear(@Valid @RequestBody CreateGroupRequest request,
             @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
@@ -47,7 +48,7 @@ public class GroupController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE','ESTUDIANTE')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE_ADMIN','DOCENTE','ESTUDIANTE')")
     @Operation(summary = "List academic groups visible to the authenticated user")
     public Page<GroupResponse> listar(
             @RequestParam(required = false) String periodo,
@@ -59,14 +60,14 @@ public class GroupController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE','ESTUDIANTE')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE_ADMIN','DOCENTE','ESTUDIANTE')")
     @Operation(summary = "Get an academic group by id")
     public GroupResponse consultar(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal) {
         return groupService.consultar(id, principal);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.TEACHER_ACTIVITY)
     @Operation(summary = "Update an academic group owned by the authenticated teacher")
     public GroupResponse actualizar(@PathVariable Long id, @Valid @RequestBody UpdateGroupRequest request,
             @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
@@ -74,7 +75,7 @@ public class GroupController {
     }
 
     @PatchMapping("/{id}/activate")
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.TEACHER_ACTIVITY)
     @Operation(summary = "Activate an academic group owned by the authenticated teacher")
     public GroupResponse activar(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest servletRequest) {
@@ -82,7 +83,7 @@ public class GroupController {
     }
 
     @PatchMapping("/{id}/deactivate")
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.TEACHER_ACTIVITY)
     @Operation(summary = "Deactivate an academic group owned by the authenticated teacher")
     public GroupResponse desactivar(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest servletRequest) {

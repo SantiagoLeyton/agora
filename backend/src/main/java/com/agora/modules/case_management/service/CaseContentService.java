@@ -77,7 +77,7 @@ public class CaseContentService {
     @Transactional
     public QuestionResponse crearPregunta(Long escenaId, QuestionRequest request, UserPrincipal principal, String ip) {
         Pregunta pregunta = preguntaRepository.save(new Pregunta(buscarEscena(escenaId), request.enunciado(),
-                request.obligatoria() == null || request.obligatoria()));
+                request.obligatoria() == null || request.obligatoria(), request.pesoPuntos()));
         audit(principal, "QUESTION_CREATED", "Pregunta creada: " + pregunta.getId(), ip);
         return QuestionResponse.from(pregunta);
     }
@@ -91,7 +91,7 @@ public class CaseContentService {
     public QuestionResponse actualizarPregunta(Long id, QuestionRequest request, UserPrincipal principal, String ip) {
         Pregunta pregunta = buscarPregunta(id);
         pregunta.actualizar(request.enunciado(), request.obligatoria() == null || request.obligatoria(),
-                request.activo() == null || request.activo());
+                request.activo() == null || request.activo(), request.pesoPuntos());
         audit(principal, "QUESTION_UPDATED", "Pregunta actualizada: " + id, ip);
         return QuestionResponse.from(preguntaRepository.save(pregunta));
     }
@@ -108,7 +108,7 @@ public class CaseContentService {
             throw new ConflictException("Ya existe una opcion con ese orden para la pregunta");
         }
         Opcion opcion = opcionRepository.save(new Opcion(buscarPregunta(preguntaId), request.texto(),
-                request.descripcion(), request.orden()));
+                request.descripcion(), request.orden(), request.porcentajeCredito()));
         audit(principal, "OPTION_CREATED", "Opcion creada: " + opcion.getId(), ip);
         return OptionResponse.from(opcion);
     }
@@ -125,7 +125,7 @@ public class CaseContentService {
             throw new ConflictException("Ya existe una opcion con ese orden para la pregunta");
         }
         opcion.actualizar(request.texto(), request.descripcion(), request.orden(),
-                request.activo() == null || request.activo());
+                request.activo() == null || request.activo(), request.porcentajeCredito());
         audit(principal, "OPTION_UPDATED", "Opcion actualizada: " + id, ip);
         return OptionResponse.from(opcionRepository.save(opcion));
     }

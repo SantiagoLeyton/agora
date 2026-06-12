@@ -11,31 +11,36 @@ import {
   ActionTile,
   ActionTileGrid,
   DataTable,
-  ClinicalInsights,
+  PageLoading,
 } from "@/components/design-system";
-import { clinicalInsights } from "@/lib/clinical-copy";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { ClinicalAvatar } from "@/components/design-system";
-import { mockTeacherStats } from "@/mocks";
-import { useStudents, useAssignments, useCases } from "@/hooks/use-data";
+import { useStudents, useAssignments, useCases, useTeacherMetrics } from "@/hooks/use-data";
 import { getPageHeroMeta } from "@/lib/page-meta";
+import { mapTeacherMetricsToOverviewStats } from "@/lib/teacher-metrics-adapters";
+import { mapTeacherMetricsToDashboardHero } from "@/lib/dashboard-adapters";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import type { Student } from "@/types";
 
 const teacherMetricIcons = {
-  "Estudiantes activos": Users,
-  "Promedio grupal": BarChart3,
-  "Asignaciones activas": ClipboardList,
-  "Estudiantes en riesgo": MessageSquareText,
+  "Participantes matriculados": Users,
+  "Tasa de finalización": BarChart3,
+  "Programaciones activas": ClipboardList,
+  "Pendientes de retroalimentación": MessageSquareText,
 };
 
 export default function TeacherDashboardPage() {
   const { data: students, isLoading } = useStudents();
   const { data: assignments } = useAssignments();
   const { data: cases } = useCases();
+  const { data: metrics, isLoading: metricsLoading } = useTeacherMetrics();
   const meta = getPageHeroMeta("/teacher");
+  const metricStats = metrics ? mapTeacherMetricsToOverviewStats(metrics) : [];
+
+  if (metricsLoading) {
+    return <PageLoading />;
+  }
 
   return (
     <div className="space-y-8">
@@ -44,11 +49,7 @@ export default function TeacherDashboardPage() {
         title={meta.title}
         description={meta.description}
         tags={["Gestión académica", "Seguimiento clínico"]}
-        stats={mockTeacherStats.slice(0, 3).map((s) => ({
-          label: s.label.replace("Estudiantes activos", "Activos").replace("Promedio grupal", "Promedio"),
-          value: s.value,
-          hint: s.change,
-        }))}
+        stats={mapTeacherMetricsToDashboardHero(metrics)}
         action={
           <Button asChild variant="brand" size="lg">
             <Link href="/teacher/cases">
@@ -59,14 +60,7 @@ export default function TeacherDashboardPage() {
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <MetricGrid stats={mockTeacherStats} icons={teacherMetricIcons} />
-        </div>
-        <Surface variant="muted">
-          <ClinicalInsights insights={clinicalInsights.teacher} title="Inteligencia clínica" />
-        </Surface>
-      </div>
+      <MetricGrid stats={metricStats} icons={teacherMetricIcons} />
 
       <SectionHeader title="Acciones rápidas" />
       <ActionTileGrid>
@@ -90,9 +84,13 @@ export default function TeacherDashboardPage() {
             <div className="flex h-32 items-center justify-center">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
+          ) : !students?.length ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              No hay estudiantes asignados a tus grupos.
+            </p>
           ) : (
             <DataTable<Student>
-              data={students?.slice(0, 5) ?? []}
+              data={students.slice(0, 5)}
               keyExtractor={(s) => `${s.email}-${s.group}`}
               columns={[
                 {
@@ -109,25 +107,16 @@ export default function TeacherDashboardPage() {
                   ),
                 },
                 {
-                  key: "progress",
-                  header: "Progreso",
-                  cell: (s) => (
-                    <div className="flex items-center gap-2 min-w-[100px]">
-                      <Progress value={s.progress} className="h-1.5 flex-1" />
-                      <span className="text-xs tabular-nums">{s.progress}%</span>
-                    </div>
-                  ),
+                  key: "group",
+                  header: "Grupo",
+                  cell: (s) => <span className="text-sm">{s.group}</span>,
                 },
                 {
                   key: "status",
                   header: "Estado",
                   cell: (s) => (
-                    <Badge
-                      variant={
-                        s.status === "active" ? "success" : s.status === "at_risk" ? "warning" : "muted"
-                      }
-                    >
-                      {s.status === "active" ? "Activo" : s.status === "at_risk" ? "En riesgo" : "Inactivo"}
+                    <Badge variant={s.status === "active" ? "success" : "muted"}>
+                      {s.status === "active" ? "Activo" : "Inactivo"}
                     </Badge>
                   ),
                 },
@@ -140,32 +129,37 @@ export default function TeacherDashboardPage() {
           <Surface>
             <SectionHeader title="Asignaciones activas" />
             <div className="mt-4 space-y-3">
-              {assignments?.map((a) => (
-                <div key={a.id} className="rounded-lg border border-border/50 bg-muted/15 p-3">
-                  <p className="text-sm font-medium">{a.title}</p>
-                  <p className="text-xs text-muted-foreground">{a.groupName}</p>
-                  <div className="mt-2 flex justify-between text-xs">
-                    <span className="text-muted-foreground">
-                      {format(new Date(a.dueDate), "d MMM", { locale: es })}
-                    </span>
-                    <span className="font-medium text-primary">{a.completionRate}%</span>
+              {!assignments?.length ? (
+                <p className="text-sm text-muted-foreground">No hay programaciones activas.</p>
+              ) : (
+                assignments.map((a) => (
+                  <div key={a.id} className="rounded-lg border border-border/50 bg-muted/15 p-3">
+                    <p className="text-sm font-medium">{a.caseTitle}</p>
+                    <p className="text-xs text-muted-foreground">{a.groupName}</p>
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      Vence {format(new Date(a.dueDate), "d MMM yyyy", { locale: es })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </Surface>
 
           <Surface>
             <SectionHeader title="Casos publicados" />
             <div className="mt-4 space-y-2">
-              {(cases ?? []).slice(0, 3).map((c) => (
-                <div key={c.id} className="flex justify-between rounded-lg border border-border/40 p-2.5 text-sm">
-                  <span className="line-clamp-1 font-medium">{c.title}</span>
-                  <Button asChild variant="ghost" size="sm" className="h-7 shrink-0">
-                    <Link href="/teacher/cases">Editar</Link>
-                  </Button>
-                </div>
-              ))}
+              {!cases?.length ? (
+                <p className="text-sm text-muted-foreground">No hay casos publicados.</p>
+              ) : (
+                cases.slice(0, 3).map((c) => (
+                  <div key={c.id} className="flex justify-between rounded-lg border border-border/40 p-2.5 text-sm">
+                    <span className="line-clamp-1 font-medium">{c.title}</span>
+                    <Button asChild variant="ghost" size="sm" className="h-7 shrink-0">
+                      <Link href="/teacher/cases">Ver</Link>
+                    </Button>
+                  </div>
+                ))
+              )}
             </div>
           </Surface>
         </div>

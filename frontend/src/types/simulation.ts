@@ -22,6 +22,9 @@ export interface AttemptResponse {
   fechaInicio: string;
   fechaFin: string | null;
   estado: SimulationStatus;
+  puntosObtenidos: number | null;
+  puntosMaximos: number | null;
+  notaFinal: number | null;
 }
 
 export interface SimulationStateResponse {

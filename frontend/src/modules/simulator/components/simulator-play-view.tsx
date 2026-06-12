@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { ArrowLeft } from "lucide-react";
@@ -70,6 +70,8 @@ interface SimulatorPlayViewProps {
 
 export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const programacionId = searchParams.get("programacionId");
   const user = useAuthStore((s) => s.user);
   const { session, setSession } = useSimulatorStore();
   const [interactionNonce, setInteractionNonce] = useState(0);
@@ -307,6 +309,7 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
     if (!pendingModel || scenes.length === 0 || !builder) return;
     const started = await startSimulation.mutateAsync({
       casoId: Number(caseItem.id),
+      ...(programacionId ? { programacionId: Number(programacionId) } : {}),
     });
     const [createdSimulation, createdSummary] = await Promise.all([
       simulationService.detail(started.intentoId),

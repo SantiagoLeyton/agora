@@ -60,4 +60,7 @@ export const queryKeys = {
     all: () => ["teacher", "metrics"] as const,
     detail: (filters?: unknown) => ["teacher", "metrics", filters] as const,
   },
+  studentSessions: {
+    all: () => ["student", "sessions"] as const,
+  },
 } as const;

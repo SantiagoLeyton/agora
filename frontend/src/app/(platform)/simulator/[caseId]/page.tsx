@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { use, useMemo, useState } from "react";
 import { ArrowLeft, Clock, Play, Target, Stethoscope } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +33,8 @@ const difficultyLabels = {
 export default function CaseDetailPage({ params }: CaseDetailPageProps) {
   const { caseId } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const programacionId = searchParams.get("programacionId");
   const { data: caseItem, isLoading } = useCase(caseId);
   const { data: builder, isLoading: isBuilderLoading } = useCaseBuilder(caseId);
   const session = useSimulatorStore((s) => s.session);
@@ -55,13 +57,19 @@ export default function CaseDetailPage({ params }: CaseDetailPageProps) {
 
   const handleStart = async () => {
     if (!selectedModel || !firstSceneId || !builder) return;
-    const started = await startSimulation.mutateAsync({ casoId: Number(caseId) });
+    const started = await startSimulation.mutateAsync({
+      casoId: Number(caseId),
+      ...(programacionId ? { programacionId: Number(programacionId) } : {}),
+    });
     const [simulation, summary] = await Promise.all([
       simulationService.detail(started.intentoId),
       simulationService.summary(started.intentoId),
     ]);
     setSession(mapSimulationToSession(simulation, builder, selectedModel, summary));
-    router.push(`/simulator/${caseId}/play`);
+    const playUrl = programacionId
+      ? `/simulator/${caseId}/play?programacionId=${programacionId}`
+      : `/simulator/${caseId}/play`;
+    router.push(playUrl);
   };
 
   if (isLoading || isBuilderLoading) return <PageLoading />;

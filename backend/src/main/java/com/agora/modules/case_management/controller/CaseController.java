@@ -5,6 +5,7 @@ import com.agora.modules.case_management.dto.CaseRequest;
 import com.agora.modules.case_management.dto.CaseResponse;
 import com.agora.modules.case_management.service.CaseBuilderService;
 import com.agora.modules.case_management.service.CaseService;
+import com.agora.security.SecurityExpressions;
 import com.agora.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -18,6 +19,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,7 +43,7 @@ public class CaseController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
     @Operation(summary = "Create a case")
     public CaseResponse crear(@Valid @RequestBody CaseRequest request,
             @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
@@ -49,23 +51,27 @@ public class CaseController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE','ESTUDIANTE')")
+    @PreAuthorize(SecurityExpressions.CASE_READER)
     @Operation(summary = "List cases")
     public Page<CaseResponse> listar(@RequestParam(required = false) Boolean activo,
-            @RequestParam(required = false) String search, @PageableDefault(size = 20, sort = "id") Pageable pageable,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String nivelDificultad,
+            @RequestParam(required = false) Long creadorId,
+            @RequestParam(required = false) String rdaSearch,
+            @PageableDefault(size = 20, sort = "id") Pageable pageable,
             @AuthenticationPrincipal UserPrincipal principal) {
-        return caseService.listar(activo, search, principal, pageable);
+        return caseService.listar(activo, search, nivelDificultad, creadorId, rdaSearch, principal, pageable);
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE','ESTUDIANTE')")
+    @PreAuthorize(SecurityExpressions.CASE_READER)
     @Operation(summary = "Get a case")
     public CaseResponse consultar(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal) {
         return caseService.consultar(id, principal);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
     @Operation(summary = "Update a case")
     public CaseResponse actualizar(@PathVariable Long id, @Valid @RequestBody CaseRequest request,
             @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
@@ -73,7 +79,7 @@ public class CaseController {
     }
 
     @PatchMapping("/{id}/activate")
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
     @Operation(summary = "Activate a case")
     public CaseResponse activar(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest servletRequest) {
@@ -81,34 +87,59 @@ public class CaseController {
     }
 
     @PatchMapping("/{id}/deactivate")
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
     @Operation(summary = "Deactivate a case")
     public CaseResponse desactivar(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest servletRequest) {
         return caseService.desactivar(id, principal, clientIp(servletRequest));
     }
 
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
+    @Operation(summary = "Delete a case without attempts")
+    public void eliminar(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal,
+            HttpServletRequest servletRequest) {
+        caseService.eliminar(id, principal, clientIp(servletRequest));
+    }
+
     @GetMapping("/{id}/builder")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE','ESTUDIANTE')")
+    @PreAuthorize(SecurityExpressions.CASE_READER)
     @Operation(summary = "Get complete case builder structure")
     public CaseBuilderResponse builder(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal) {
         return builderService.obtener(id, principal);
     }
 
     @PostMapping("/{id}/tools/{toolId}")
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
     @Operation(summary = "Link a tool to a case")
     public CaseResponse asociarHerramienta(@PathVariable Long id, @PathVariable Long toolId,
             @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
         return caseService.asociarHerramienta(id, toolId, principal, clientIp(servletRequest));
     }
 
+    @DeleteMapping("/{id}/tools/{toolId}")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
+    @Operation(summary = "Unlink a tool from a case")
+    public CaseResponse desasociarHerramienta(@PathVariable Long id, @PathVariable Long toolId,
+            @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
+        return caseService.desasociarHerramienta(id, toolId, principal, clientIp(servletRequest));
+    }
+
     @PostMapping("/{id}/entities/{entityId}")
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
     @Operation(summary = "Link an institutional entity to a case")
     public CaseResponse asociarEntidad(@PathVariable Long id, @PathVariable Long entityId,
             @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
         return caseService.asociarEntidad(id, entityId, principal, clientIp(servletRequest));
+    }
+
+    @DeleteMapping("/{id}/entities/{entityId}")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
+    @Operation(summary = "Unlink an institutional entity from a case")
+    public CaseResponse desasociarEntidad(@PathVariable Long id, @PathVariable Long entityId,
+            @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
+        return caseService.desasociarEntidad(id, entityId, principal, clientIp(servletRequest));
     }
 
     private String clientIp(HttpServletRequest request) {

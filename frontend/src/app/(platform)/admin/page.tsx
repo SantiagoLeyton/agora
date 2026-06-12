@@ -10,21 +10,38 @@ import {
   SectionHeader,
   ActionTile,
   ActionTileGrid,
+  PageLoading,
 } from "@/components/design-system";
 import { InstitutionalLogo } from "@/components/shared/institutional-logo";
-import { mockAdminStats } from "@/mocks";
+import { useUsers, useCases, useAttempts, useAcademicGroups } from "@/hooks/use-data";
 import { getPageHeroMeta } from "@/lib/page-meta";
 import { BRAND } from "@/lib/branding";
+import { mapAdminCountsToDashboardStats } from "@/lib/dashboard-adapters";
 
 const adminMetricIcons = {
   "Usuarios registrados": UserCog,
-  Instituciones: Shield,
+  "Grupos académicos": Shield,
   "Casos publicados": GraduationCap,
-  "Sesiones este mes": Settings,
+  "Intentos registrados": Settings,
 };
 
 export default function AdminDashboardPage() {
   const meta = getPageHeroMeta("/admin");
+  const { data: usersPage, isLoading: usersLoading } = useUsers({ size: 1 });
+  const { data: cases, isLoading: casesLoading } = useCases();
+  const { data: attemptsPage, isLoading: attemptsLoading } = useAttempts({ size: 1 });
+  const { data: groupsPage, isLoading: groupsLoading } = useAcademicGroups({ size: 1 });
+
+  if (usersLoading || casesLoading || attemptsLoading || groupsLoading) {
+    return <PageLoading />;
+  }
+
+  const adminStats = mapAdminCountsToDashboardStats({
+    users: usersPage?.totalElements ?? 0,
+    cases: cases?.length ?? 0,
+    attempts: attemptsPage?.totalElements ?? 0,
+    groups: groupsPage?.totalElements ?? 0,
+  });
 
   return (
     <div className="space-y-8">
@@ -33,7 +50,7 @@ export default function AdminDashboardPage() {
         title={meta.title}
         description={meta.description}
         tags={["Ecosistema institucional"]}
-        stats={mockAdminStats.slice(0, 3).map((s) => ({
+        stats={adminStats.slice(0, 3).map((s) => ({
           label: s.label.split(" ")[0],
           value: s.value,
           hint: s.change,
@@ -45,7 +62,7 @@ export default function AdminDashboardPage() {
         }
       />
 
-      <MetricGrid stats={mockAdminStats} icons={adminMetricIcons} />
+      <MetricGrid stats={adminStats} icons={adminMetricIcons} />
 
       <SectionHeader title="Gestión del ecosistema" />
       <ActionTileGrid>

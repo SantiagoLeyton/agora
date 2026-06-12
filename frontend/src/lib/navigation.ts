@@ -3,6 +3,7 @@ import { clinicalCopy } from "@/lib/clinical-copy";
 
 const studentNav: NavItem[] = [
   { title: "Inicio", href: "/dashboard", icon: "LayoutDashboard", roles: ["student"], section: "Aprendizaje" },
+  { title: "Mis sesiones asignadas", href: "/dashboard/sessions", icon: "CalendarClock", roles: ["student"], section: "Práctica clínica" },
   { title: clinicalCopy.simulator, href: "/simulator", icon: "Brain", roles: ["student"], section: "Práctica clínica" },
   { title: clinicalCopy.evaluation, href: "/evaluation", icon: "BarChart3", roles: ["student"], section: "Seguimiento" },
 ];

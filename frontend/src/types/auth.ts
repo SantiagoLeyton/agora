@@ -1,6 +1,6 @@
 import type { User, UserRole } from "@/types";
 
-export type Role = "ESTUDIANTE" | "DOCENTE" | "ADMINISTRADOR";
+export type Role = "ESTUDIANTE" | "DOCENTE" | "DOCENTE_ADMIN" | "ADMINISTRADOR";
 
 export interface LoginRequest {
   correo: string;
@@ -41,6 +41,7 @@ export interface LogoutRequest {
 export function mapBackendRoleToUserRole(role: Role): UserRole {
   switch (role) {
     case "DOCENTE":
+    case "DOCENTE_ADMIN":
       return "teacher";
     case "ADMINISTRADOR":
       return "admin";
@@ -57,5 +58,6 @@ export function mapAuthenticatedUserToUser(user: AuthenticatedUser): User {
     email: user.correo,
     name: fullName.length > 0 ? fullName : user.correo,
     role: mapBackendRoleToUserRole(user.rol),
+    backendRole: user.rol,
   };
 }

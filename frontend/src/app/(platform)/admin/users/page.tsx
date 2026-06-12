@@ -11,6 +11,7 @@ import { useRoles, useUsers } from "@/hooks/use-data";
 const roleLabels = {
   ESTUDIANTE: "Estudiante",
   DOCENTE: "Docente",
+  DOCENTE_ADMIN: "Docente administrador",
   ADMINISTRADOR: "Administrador",
 } as const;
 
@@ -19,9 +20,12 @@ export default function AdminUsersPage() {
   const { data: usersPage } = useUsers({ size: 100 });
   const { data: roles = [] } = useRoles();
   const users = usersPage?.content ?? [];
-  const getRoleLabel = (role: keyof typeof roleLabels) => {
+  const getRoleLabel = (role: string) => {
+    if (role in roleLabels) {
+      return roleLabels[role as keyof typeof roleLabels];
+    }
     const backendRole = roles.find((item) => item.nombre === role);
-    return backendRole ? roleLabels[backendRole.nombre] : roleLabels[role];
+    return backendRole?.nombre ?? role;
   };
 
   return (

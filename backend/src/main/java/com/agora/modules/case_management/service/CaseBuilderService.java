@@ -1,6 +1,7 @@
 package com.agora.modules.case_management.service;
 
 import com.agora.modules.case_management.domain.Caso;
+import com.agora.modules.case_management.domain.Herramienta;
 import com.agora.modules.case_management.dto.CaseBuilderResponse;
 import com.agora.modules.case_management.dto.CaseResponse;
 import com.agora.modules.case_management.dto.InstitutionalEntityResponse;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CaseBuilderService {
 
     private final CaseService caseService;
+    private final LearningOutcomeService learningOutcomeService;
     private final EscenaRepository escenaRepository;
     private final PreguntaRepository preguntaRepository;
     private final OpcionRepository opcionRepository;
@@ -41,13 +43,19 @@ public class CaseBuilderService {
                                 .toList()))
                 .toList();
         var herramientas = caso.getHerramientas().stream()
-                .sorted(Comparator.comparing(Herramienta -> Herramienta.getId()))
+                .sorted(Comparator.comparing(Herramienta::getId))
                 .map(ToolResponse::from)
                 .toList();
         var entidades = caso.getEntidades().stream()
                 .sorted(Comparator.comparing(entidad -> entidad.getId()))
                 .map(InstitutionalEntityResponse::from)
                 .toList();
-        return new CaseBuilderResponse(CaseResponse.from(caso), escenas, herramientas, entidades);
+        var resultados = learningOutcomeService.listarPorCaso(id);
+        return new CaseBuilderResponse(
+                CaseResponse.from(caso, resultados),
+                escenas,
+                herramientas,
+                entidades,
+                resultados);
     }
 }

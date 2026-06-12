@@ -102,7 +102,7 @@ class SimulationControllerIntegrationTest {
         usuarioRepository.save(new Usuario(student, "Estudiante", "Agora", "estudiante@agora.com",
                 passwordEncoder.encode("Agora12345*")));
 
-        Caso caso = casoRepository.save(new Caso("Caso simulacion", "Desc", "Obj", "BASICO", 45));
+        Caso caso = casoRepository.save(new Caso("Caso simulacion", "Desc", "Obj", "BASICO", 45, null));
         Escena escena = escenaRepository.save(new Escena(caso, 1, "Escena", "Desc", "Contenido"));
         Pregunta pregunta = preguntaRepository.save(new Pregunta(escena, "Que haria?", true));
         Opcion opcion = opcionRepository.save(new Opcion(pregunta, "Intervenir", "Desc", 1));

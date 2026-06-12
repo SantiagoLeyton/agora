@@ -15,6 +15,7 @@ import {
 } from "@/components/design-system";
 import { MetricsOverview } from "@/modules/evaluation/components/evaluation-cards";
 import { useEvaluation, useGenerateAISummary } from "@/hooks/use-data";
+import { formatAcademicGrade } from "@/lib/evaluation-adapters";
 import { ApiError } from "@/services/api-error";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -68,12 +69,18 @@ export default function EvaluationResultPage({ params }: EvaluationResultPagePro
     );
   }
 
+  const gradeLabel = result.attempt
+    ? formatAcademicGrade(result.attempt)
+    : result.score === null
+      ? "Sin calificación configurada"
+      : `${result.score.toFixed(1)} / 5`;
+
   const scoreVariant =
     result.score === null
       ? "outline"
-      : result.score >= 80
+      : result.score >= 4
         ? "success"
-        : result.score >= 60
+        : result.score >= 3
           ? "warning"
           : "destructive";
 
@@ -92,17 +99,17 @@ export default function EvaluationResultPage({ params }: EvaluationResultPagePro
         description={`Completado el ${format(new Date(result.completedAt), "d 'de' MMMM, yyyy", { locale: es })} · ${result.studentName}`}
         aside={
           <InsightHighlight
-            label="Puntuación clínica"
-            value={result.score === null ? "N/D" : `${result.score}%`}
+            label="Calificación académica"
+            value={gradeLabel}
           />
         }
         action={
           <Badge variant={scoreVariant} className="px-4 py-1.5 text-sm">
             {result.score === null
-              ? "Sin puntuación cuantitativa"
-              : result.score >= 80
+              ? "Sin calificación configurada"
+              : result.score >= 4
                 ? "Desempeño destacado"
-                : result.score >= 60
+                : result.score >= 3
                   ? "En desarrollo"
                   : "Requiere refuerzo"}
           </Badge>

@@ -109,6 +109,24 @@ export function deriveImprovementsFromStates(
     .map((estado) => `${estado.nombre} elevado: ${estado.valorActual}%`);
 }
 
+function resolveAcademicScore(attempt: AttemptResponse): number | null {
+  if (attempt.notaFinal == null) {
+    return null;
+  }
+  return Number(attempt.notaFinal);
+}
+
+export function formatAcademicGrade(attempt: AttemptResponse): string {
+  if (attempt.notaFinal == null) {
+    return "Sin calificación configurada";
+  }
+  const points =
+    attempt.puntosObtenidos != null && attempt.puntosMaximos != null
+      ? ` (${attempt.puntosObtenidos}/${attempt.puntosMaximos} pts)`
+      : "";
+  return `${Number(attempt.notaFinal).toFixed(1)} / 5${points}`;
+}
+
 export function mapAttemptSummaryToEvaluation(
   attempt: AttemptResponse,
   summary: AttemptSummaryResponse,
@@ -120,7 +138,7 @@ export function mapAttemptSummaryToEvaluation(
     caseTitle: summary.caso.titulo,
     studentName: `Estudiante #${attempt.estudianteId}`,
     completedAt: attempt.fechaFin ?? attempt.fechaInicio,
-    score: null,
+    score: resolveAcademicScore(attempt),
     metrics: mapStatesToMetrics(summary.estados),
     feedback: buildEvaluationFeedback(summary, aiHistory),
     strengths: deriveStrengthsFromStates(summary.estados),

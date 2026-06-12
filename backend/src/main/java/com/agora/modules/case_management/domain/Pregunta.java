@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.AccessLevel;
@@ -39,18 +40,27 @@ public class Pregunta {
     @Column(nullable = false)
     private boolean activo = true;
 
+    @Column(name = "peso_puntos", precision = 10, scale = 2)
+    private BigDecimal pesoPuntos;
+
     @OneToMany(mappedBy = "pregunta")
     private Set<Opcion> opciones = new HashSet<>();
 
     public Pregunta(Escena escena, String enunciado, boolean obligatoria) {
+        this(escena, enunciado, obligatoria, null);
+    }
+
+    public Pregunta(Escena escena, String enunciado, boolean obligatoria, BigDecimal pesoPuntos) {
         this.escena = escena;
         this.enunciado = enunciado;
         this.obligatoria = obligatoria;
+        this.pesoPuntos = pesoPuntos;
     }
 
-    public void actualizar(String enunciado, boolean obligatoria, boolean activo) {
+    public void actualizar(String enunciado, boolean obligatoria, boolean activo, BigDecimal pesoPuntos) {
         this.enunciado = enunciado;
         this.obligatoria = obligatoria;
         this.activo = activo;
+        this.pesoPuntos = pesoPuntos;
     }
 }

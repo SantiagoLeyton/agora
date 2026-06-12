@@ -15,6 +15,11 @@ const routeHero: Record<string, PageHeroMeta> = {
     title: "Espacio académico clínico",
     description: "Simulación psicosocial, análisis clínico y seguimiento de competencias terapéuticas.",
   },
+  "/dashboard/sessions": {
+    eyebrow: "Programación académica",
+    title: "Mis sesiones asignadas",
+    description: "Sesiones clínicas programadas por tu docente dentro de tus grupos académicos.",
+  },
   "/simulator": {
     eyebrow: "Práctica clínica inmersiva",
     title: clinicalCopy.simulator,

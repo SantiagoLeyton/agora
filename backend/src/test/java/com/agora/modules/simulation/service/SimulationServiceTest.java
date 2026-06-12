@@ -6,6 +6,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.agora.infrastructure.audit.OperationalAuditService;
+import com.agora.modules.academic.repository.GrupoEstudianteRepository;
 import com.agora.modules.academic.repository.ProgramacionRepository;
 import com.agora.modules.case_management.domain.Caso;
 import com.agora.modules.case_management.domain.Escena;
@@ -56,9 +57,11 @@ class SimulationServiceTest {
     @Mock PreguntaRepository preguntaRepository;
     @Mock OpcionRepository opcionRepository;
     @Mock ProgramacionRepository programacionRepository;
+    @Mock GrupoEstudianteRepository grupoEstudianteRepository;
     @Mock UsuarioRepository usuarioRepository;
     @Mock OperationalAuditService auditService;
     @Mock AttemptFeedbackService feedbackService;
+    @Mock AttemptGradingService attemptGradingService;
 
     private SimulationService service;
     private Usuario student;
@@ -68,8 +71,8 @@ class SimulationServiceTest {
     void setUp() {
         service = new SimulationService(intentoRepository, respuestaRepository, estadoEmocionalRepository,
                 estadoIntentoRepository, consecuenciaRepository, consecuenciaEstadoRepository, casoRepository,
-                escenaRepository, preguntaRepository, opcionRepository, programacionRepository, usuarioRepository,
-                auditService, feedbackService);
+                escenaRepository, preguntaRepository, opcionRepository, programacionRepository,
+                grupoEstudianteRepository, usuarioRepository, auditService, feedbackService, attemptGradingService);
         student = withId(new Usuario(new Rol("ESTUDIANTE", ""), "Estudiante", "Agora",
                 "estudiante@agora.com", "hash"), 1L);
         principal = new UserPrincipal(1L, "Estudiante", "Agora", "estudiante@agora.com", "hash", "ESTUDIANTE",
@@ -78,7 +81,7 @@ class SimulationServiceTest {
 
     @Test
     void startsAttemptAndCreatesInitialStates() {
-        Caso caso = withId(new Caso("Caso", null, null, "BASICO", 30), 10L);
+        Caso caso = withId(new Caso("Caso", null, null, "BASICO", 30, null), 10L);
         EstadoEmocional confianza = withId(new EstadoEmocional("CONFIANZA", null, 0, 100, 50), 100L);
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(student));
         when(casoRepository.findById(10L)).thenReturn(Optional.of(caso));
@@ -93,7 +96,7 @@ class SimulationServiceTest {
 
     @Test
     void appliesConsequenceAndUpdatesStates() {
-        Caso caso = withId(new Caso("Caso", null, null, "BASICO", 30), 10L);
+        Caso caso = withId(new Caso("Caso", null, null, "BASICO", 30, null), 10L);
         Escena escena = withId(new Escena(caso, 1, "Escena", null, "Contenido"), 11L);
         Pregunta pregunta = withId(new Pregunta(escena, "Pregunta", true), 12L);
         Opcion opcion = withId(new Opcion(pregunta, "Opcion", null, 1), 13L);
@@ -124,7 +127,7 @@ class SimulationServiceTest {
     void clampsToMinimum() {
         EstadoEmocional ansiedad = new EstadoEmocional("ANSIEDAD", null, 0, 100, 50);
         EstadoIntento estado = new EstadoIntento(new Intento(student,
-                new Caso("Caso", null, null, "BASICO", 30), null), ansiedad, 5);
+                new Caso("Caso", null, null, "BASICO", 30, null), null), ansiedad, 5);
 
         estado.aplicarVariacion(-20);
 
@@ -135,7 +138,7 @@ class SimulationServiceTest {
     void clampsToMaximum() {
         EstadoEmocional confianza = new EstadoEmocional("CONFIANZA", null, 0, 100, 50);
         EstadoIntento estado = new EstadoIntento(new Intento(student,
-                new Caso("Caso", null, null, "BASICO", 30), null), confianza, 95);
+                new Caso("Caso", null, null, "BASICO", 30, null), null), confianza, 95);
 
         estado.aplicarVariacion(20);
 

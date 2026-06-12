@@ -6,6 +6,7 @@ import { attemptService, type AttemptFilters } from "@/services/attempt-service"
 import { clinicalCaseService } from "@/services/case-service";
 import { teacherFeedbackService } from "@/services/teacher-feedback-service";
 import { teacherMetricsService } from "@/services/teacher-metrics-service";
+import { studentSessionService } from "@/services/student-session-service";
 import { simulationService } from "@/services/simulation-service";
 import { mapCaseToSimulationCase } from "@/lib/case-adapters";
 import {
@@ -35,10 +36,11 @@ import type {
 } from "@/types/academic-admin";
 import type { CaseFilters, CaseRequest, OptionRequest, QuestionRequest, SceneRequest } from "@/types/clinical-case";
 import type { AISummaryRequest, AnswerSimulationRequest, CreateFeedbackRequest, StartSimulationRequest } from "@/types/simulation";
-import type { CreateCaseBundleRequest } from "@/services/case-service";
+import { caseResourceService } from "@/services/case-resource-service";
+import type { CreateCaseBundleRequest, UpdateCaseBundleRequest } from "@/services/case-service";
 import type { TeacherMetricsFilters } from "@/types/teacher-metrics";
 
-export function useCases(filters: CaseFilters = { activo: true, size: 100 }) {
+export function useCases(filters: CaseFilters = { size: 100 }) {
   return useQuery({
     queryKey: queryKeys.cases.list(filters),
     queryFn: async () => {
@@ -114,6 +116,13 @@ export function useTeacherMetrics(filters: TeacherMetricsFilters = {}) {
   return useQuery({
     queryKey: queryKeys.teacherMetrics.detail(filters),
     queryFn: () => teacherMetricsService.get(filters),
+  });
+}
+
+export function useMyAssignedSessions() {
+  return useQuery({
+    queryKey: queryKeys.studentSessions.all(),
+    queryFn: () => studentSessionService.listAssigned(),
   });
 }
 
@@ -492,6 +501,39 @@ export function useCreateCaseBundle() {
     mutationFn: (request: CreateCaseBundleRequest) =>
       clinicalCaseService.createBundle(request),
     onSuccess: () => queryInvalidation.cases(queryClient),
+  });
+}
+
+export function useUpdateCaseBundle(caseId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: UpdateCaseBundleRequest) =>
+      clinicalCaseService.updateBundle(caseId, request),
+    onSuccess: () => queryInvalidation.cases(queryClient),
+  });
+}
+
+export function useDeleteCase() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => clinicalCaseService.delete(id),
+    onSuccess: () => queryInvalidation.cases(queryClient),
+  });
+}
+
+export function useClinicalTools() {
+  return useQuery({
+    queryKey: ["clinical-tools"],
+    queryFn: async () => (await caseResourceService.listTools()).content,
+  });
+}
+
+export function useClinicalEntities() {
+  return useQuery({
+    queryKey: ["clinical-entities"],
+    queryFn: async () => (await caseResourceService.listEntities()).content,
   });
 }
 

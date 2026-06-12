@@ -5,6 +5,7 @@ import com.agora.modules.case_management.dto.InstitutionalEntityResponse;
 import com.agora.modules.case_management.dto.ToolRequest;
 import com.agora.modules.case_management.dto.ToolResponse;
 import com.agora.modules.case_management.service.CaseResourceService;
+import com.agora.security.SecurityExpressions;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,14 +36,14 @@ public class CaseResourceController {
 
     @PostMapping("/api/v1/tools")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
     @Operation(summary = "Create a tool")
     public ToolResponse crearHerramienta(@Valid @RequestBody ToolRequest request) {
         return resourceService.crearHerramienta(request);
     }
 
     @GetMapping("/api/v1/tools")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE')")
+    @PreAuthorize(SecurityExpressions.RESOURCE_READER)
     @Operation(summary = "List tools")
     public Page<ToolResponse> listarHerramientas(@RequestParam(required = false) Boolean activo,
             @RequestParam(required = false) String search, @PageableDefault(size = 20, sort = "id") Pageable pageable) {
@@ -50,14 +51,14 @@ public class CaseResourceController {
     }
 
     @GetMapping("/api/v1/tools/{id}")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE')")
+    @PreAuthorize(SecurityExpressions.RESOURCE_READER)
     @Operation(summary = "Get a tool")
     public ToolResponse consultarHerramienta(@PathVariable Long id) {
         return resourceService.consultarHerramienta(id);
     }
 
     @PutMapping("/api/v1/tools/{id}")
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
     @Operation(summary = "Update a tool")
     public ToolResponse actualizarHerramienta(@PathVariable Long id, @Valid @RequestBody ToolRequest request) {
         return resourceService.actualizarHerramienta(id, request);
@@ -65,7 +66,7 @@ public class CaseResourceController {
 
     @DeleteMapping("/api/v1/tools/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
     @Operation(summary = "Delete a tool")
     public void eliminarHerramienta(@PathVariable Long id) {
         resourceService.eliminarHerramienta(id);
@@ -73,14 +74,14 @@ public class CaseResourceController {
 
     @PostMapping("/api/v1/institutional-entities")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
     @Operation(summary = "Create an institutional entity")
     public InstitutionalEntityResponse crearEntidad(@Valid @RequestBody InstitutionalEntityRequest request) {
         return resourceService.crearEntidad(request);
     }
 
     @GetMapping("/api/v1/institutional-entities")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE')")
+    @PreAuthorize(SecurityExpressions.RESOURCE_READER)
     @Operation(summary = "List institutional entities")
     public Page<InstitutionalEntityResponse> listarEntidades(@RequestParam(required = false) Boolean activo,
             @RequestParam(required = false) String search, @PageableDefault(size = 20, sort = "id") Pageable pageable) {
@@ -88,14 +89,14 @@ public class CaseResourceController {
     }
 
     @GetMapping("/api/v1/institutional-entities/{id}")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE')")
+    @PreAuthorize(SecurityExpressions.RESOURCE_READER)
     @Operation(summary = "Get an institutional entity")
     public InstitutionalEntityResponse consultarEntidad(@PathVariable Long id) {
         return resourceService.consultarEntidad(id);
     }
 
     @PutMapping("/api/v1/institutional-entities/{id}")
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
     @Operation(summary = "Update an institutional entity")
     public InstitutionalEntityResponse actualizarEntidad(@PathVariable Long id,
             @Valid @RequestBody InstitutionalEntityRequest request) {
@@ -104,7 +105,7 @@ public class CaseResourceController {
 
     @DeleteMapping("/api/v1/institutional-entities/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.CASE_MANAGER)
     @Operation(summary = "Delete an institutional entity")
     public void eliminarEntidad(@PathVariable Long id) {
         resourceService.eliminarEntidad(id);

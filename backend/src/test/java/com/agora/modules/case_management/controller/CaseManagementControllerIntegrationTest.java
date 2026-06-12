@@ -3,6 +3,7 @@ package com.agora.modules.case_management.controller;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -14,6 +15,7 @@ import com.agora.modules.case_management.repository.EscenaRepository;
 import com.agora.modules.case_management.repository.HerramientaRepository;
 import com.agora.modules.case_management.repository.OpcionRepository;
 import com.agora.modules.case_management.repository.PreguntaRepository;
+import com.agora.modules.case_management.repository.ResultadoAprendizajeRepository;
 import com.agora.modules.user.domain.Rol;
 import com.agora.modules.user.domain.Usuario;
 import com.agora.modules.user.repository.RolRepository;
@@ -50,12 +52,14 @@ class CaseManagementControllerIntegrationTest {
     @Autowired OpcionRepository opcionRepository;
     @Autowired HerramientaRepository herramientaRepository;
     @Autowired EntidadInstitucionalRepository entidadRepository;
+    @Autowired ResultadoAprendizajeRepository resultadoRepository;
 
     @BeforeEach
     void setUp() {
         opcionRepository.deleteAll();
         preguntaRepository.deleteAll();
         escenaRepository.deleteAll();
+        resultadoRepository.deleteAll();
         casoRepository.deleteAll();
         herramientaRepository.deleteAll();
         entidadRepository.deleteAll();
@@ -64,9 +68,12 @@ class CaseManagementControllerIntegrationTest {
         usuarioRepository.deleteAll();
         rolRepository.deleteAll();
         Rol admin = rolRepository.save(new Rol("ADMINISTRADOR", "Administrador"));
+        Rol teacherAdmin = rolRepository.save(new Rol("DOCENTE_ADMIN", "Docente administrador"));
         Rol teacher = rolRepository.save(new Rol("DOCENTE", "Docente"));
         Rol student = rolRepository.save(new Rol("ESTUDIANTE", "Estudiante"));
         usuarioRepository.save(new Usuario(admin, "Admin", "Agora", "admin@agora.com",
+                passwordEncoder.encode("Agora12345*")));
+        usuarioRepository.save(new Usuario(teacherAdmin, "Docente", "Admin", "docente_admin@agora.com",
                 passwordEncoder.encode("Agora12345*")));
         usuarioRepository.save(new Usuario(teacher, "Docente", "Agora", "docente@agora.com",
                 passwordEncoder.encode("Agora12345*")));
@@ -75,18 +82,19 @@ class CaseManagementControllerIntegrationTest {
     }
 
     @Test
-    void teacherBuildsCaseAndAdminReadsIt() throws Exception {
-        String teacher = login("docente@agora.com");
+    void teacherAdminBuildsCaseAndAdminReadsIt() throws Exception {
+        String manager = login("docente_admin@agora.com");
         String admin = login("admin@agora.com");
-        Long caseId = createCase(teacher);
-        Long sceneId = createScene(teacher, caseId, 1);
-        Long questionId = createQuestion(teacher, sceneId);
-        createOption(teacher, questionId, 1);
-        Long toolId = createTool(teacher);
-        Long entityId = createEntity(teacher);
-        mockMvc.perform(post("/api/v1/cases/" + caseId + "/tools/" + toolId).header("Authorization", bearer(teacher)))
+        Long caseId = createCase(manager);
+        syncLearningOutcomes(manager, caseId);
+        Long sceneId = createScene(manager, caseId, 1);
+        Long questionId = createQuestion(manager, sceneId);
+        createOption(manager, questionId, 1);
+        Long toolId = createTool(manager);
+        Long entityId = createEntity(manager);
+        mockMvc.perform(post("/api/v1/cases/" + caseId + "/tools/" + toolId).header("Authorization", bearer(manager)))
                 .andExpect(status().isOk());
-        mockMvc.perform(post("/api/v1/cases/" + caseId + "/entities/" + entityId).header("Authorization", bearer(teacher)))
+        mockMvc.perform(post("/api/v1/cases/" + caseId + "/entities/" + entityId).header("Authorization", bearer(manager)))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/cases/" + caseId + "/builder").header("Authorization", bearer(admin)))
@@ -94,24 +102,33 @@ class CaseManagementControllerIntegrationTest {
                 .andExpect(jsonPath("$.caso.id").value(caseId))
                 .andExpect(jsonPath("$.escenas[0].preguntas[0].opciones[0].orden").value(1))
                 .andExpect(jsonPath("$.herramientas[0].id").value(toolId))
-                .andExpect(jsonPath("$.entidades[0].id").value(entityId));
+                .andExpect(jsonPath("$.entidades[0].id").value(entityId))
+                .andExpect(jsonPath("$.resultadosAprendizaje[0].descripcion").value("Aplicar escucha activa"));
     }
 
     @Test
     void protectsCasesByRoleAndActiveState() throws Exception {
+        String manager = login("docente_admin@agora.com");
         String teacher = login("docente@agora.com");
         String student = login("estudiante@agora.com");
-        Long caseId = createCase(teacher);
+        Long caseId = createCase(manager);
+
+        mockMvc.perform(post("/api/v1/cases").header("Authorization", bearer(teacher))
+                        .contentType(MediaType.APPLICATION_JSON).content(caseBody()))
+                .andExpect(status().isForbidden());
 
         mockMvc.perform(post("/api/v1/cases").header("Authorization", bearer(student))
                         .contentType(MediaType.APPLICATION_JSON).content(caseBody()))
                 .andExpect(status().isForbidden());
 
-        mockMvc.perform(get("/api/v1/cases").header("Authorization", bearer(student)))
+        mockMvc.perform(get("/api/v1/cases").header("Authorization", bearer(teacher)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value(caseId));
 
         mockMvc.perform(patch("/api/v1/cases/" + caseId + "/deactivate").header("Authorization", bearer(teacher)))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(patch("/api/v1/cases/" + caseId + "/deactivate").header("Authorization", bearer(manager)))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/cases/" + caseId).header("Authorization", bearer(student)))
@@ -120,17 +137,17 @@ class CaseManagementControllerIntegrationTest {
 
     @Test
     void rejectsDuplicateSceneAndOptionOrder() throws Exception {
-        String teacher = login("docente@agora.com");
-        Long caseId = createCase(teacher);
-        Long sceneId = createScene(teacher, caseId, 1);
+        String manager = login("docente_admin@agora.com");
+        Long caseId = createCase(manager);
+        Long sceneId = createScene(manager, caseId, 1);
 
-        mockMvc.perform(post("/api/v1/cases/" + caseId + "/scenes").header("Authorization", bearer(teacher))
+        mockMvc.perform(post("/api/v1/cases/" + caseId + "/scenes").header("Authorization", bearer(manager))
                         .contentType(MediaType.APPLICATION_JSON).content(sceneBody(1)))
                 .andExpect(status().isConflict());
 
-        Long questionId = createQuestion(teacher, sceneId);
-        createOption(teacher, questionId, 1);
-        mockMvc.perform(post("/api/v1/questions/" + questionId + "/options").header("Authorization", bearer(teacher))
+        Long questionId = createQuestion(manager, sceneId);
+        createOption(manager, questionId, 1);
+        mockMvc.perform(post("/api/v1/questions/" + questionId + "/options").header("Authorization", bearer(manager))
                         .contentType(MediaType.APPLICATION_JSON).content(optionBody(1)))
                 .andExpect(status().isConflict());
     }
@@ -140,6 +157,13 @@ class CaseManagementControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON).content(caseBody()))
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
         return objectMapper.readTree(response).get("id").asLong();
+    }
+
+    private void syncLearningOutcomes(String token, Long caseId) throws Exception {
+        mockMvc.perform(put("/api/v1/cases/" + caseId + "/learning-outcomes/sync").header("Authorization", bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[{\"orden\":1,\"descripcion\":\"Aplicar escucha activa\"}]"))
+                .andExpect(status().isOk());
     }
 
     private Long createScene(String token, Long caseId, int order) throws Exception {

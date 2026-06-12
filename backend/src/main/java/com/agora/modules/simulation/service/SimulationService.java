@@ -1,7 +1,9 @@
 package com.agora.modules.simulation.service;
 
 import com.agora.infrastructure.audit.OperationalAuditService;
+import com.agora.modules.academic.domain.Grupo;
 import com.agora.modules.academic.domain.Programacion;
+import com.agora.modules.academic.repository.GrupoEstudianteRepository;
 import com.agora.modules.academic.repository.ProgramacionRepository;
 import com.agora.modules.case_management.domain.Caso;
 import com.agora.modules.case_management.domain.Escena;
@@ -39,6 +41,7 @@ import com.agora.security.UserPrincipal;
 import com.agora.shared.exception.BusinessRuleException;
 import com.agora.shared.exception.ConflictException;
 import com.agora.shared.exception.ResourceNotFoundException;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -65,9 +68,11 @@ public class SimulationService {
     private final PreguntaRepository preguntaRepository;
     private final OpcionRepository opcionRepository;
     private final ProgramacionRepository programacionRepository;
+    private final GrupoEstudianteRepository grupoEstudianteRepository;
     private final UsuarioRepository usuarioRepository;
     private final OperationalAuditService auditService;
     private final AttemptFeedbackService feedbackService;
+    private final AttemptGradingService attemptGradingService;
 
     @Transactional
     public SimulationStartedResponse iniciar(StartSimulationRequest request, UserPrincipal principal, String ip) {
@@ -78,7 +83,7 @@ public class SimulationService {
         if (!caso.isActivo()) {
             throw new AccessDeniedException("El caso no esta activo");
         }
-        Programacion programacion = buscarProgramacion(request.programacionId(), caso.getId());
+        Programacion programacion = buscarProgramacion(request.programacionId(), caso.getId(), estudiante.getId());
         Intento intento = intentoRepository.save(new Intento(estudiante, caso, programacion));
         crearEstadosIniciales(intento);
         audit(estudiante, "SIMULATION_STARTED", "Simulacion iniciada: intento " + intento.getId(), ip);
@@ -133,6 +138,7 @@ public class SimulationService {
             throw new BusinessRuleException("La simulacion no esta en proceso");
         }
         intento.finalizar();
+        attemptGradingService.calcularYRegistrar(intento);
         Intento guardado = intentoRepository.save(intento);
         Usuario actor = actor(principal);
         feedbackService.generarSistema(guardado, actor, ip);
@@ -203,7 +209,7 @@ public class SimulationService {
                 .toList();
     }
 
-    private Programacion buscarProgramacion(Long programacionId, Long casoId) {
+    private Programacion buscarProgramacion(Long programacionId, Long casoId, Long estudianteId) {
         if (programacionId == null) {
             return null;
         }
@@ -212,7 +218,24 @@ public class SimulationService {
         if (!programacion.isActivo()) {
             throw new BusinessRuleException("La programacion no esta activa");
         }
-        if (programacion.getCasoId() != null && !programacion.getCasoId().equals(casoId)) {
+        Grupo grupo = programacion.getGrupo();
+        if (!grupo.isActivo()) {
+            throw new BusinessRuleException("El grupo de la programacion no esta activo");
+        }
+        if (!grupoEstudianteRepository.existsByGrupoIdAndEstudianteId(grupo.getId(), estudianteId)) {
+            throw new AccessDeniedException("No esta matriculado en el grupo de esta programacion");
+        }
+        Instant now = Instant.now();
+        if (now.isBefore(programacion.getFechaInicio())) {
+            throw new BusinessRuleException("La programacion aun no esta disponible");
+        }
+        if (now.isAfter(programacion.getFechaFin())) {
+            throw new BusinessRuleException("La programacion ya finalizo");
+        }
+        if (programacion.getCasoId() == null) {
+            throw new BusinessRuleException("La programacion no tiene un caso asignado");
+        }
+        if (!programacion.getCasoId().equals(casoId)) {
             throw new BusinessRuleException("La programacion no corresponde al caso indicado");
         }
         return programacion;

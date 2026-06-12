@@ -2,6 +2,20 @@ import type { PageRequest } from "@/types/page";
 
 type QueryValue = string | number | boolean | undefined | null;
 
+export interface LearningOutcomeResponse {
+  id: number;
+  casoId: number;
+  orden: number;
+  descripcion: string;
+  fechaCreacion: string;
+  fechaActualizacion: string;
+}
+
+export interface LearningOutcomeRequest {
+  orden: number;
+  descripcion: string;
+}
+
 export interface CaseResponse {
   id: number;
   titulo: string;
@@ -12,6 +26,9 @@ export interface CaseResponse {
   activo: boolean;
   fechaCreacion: string;
   fechaActualizacion: string;
+  creadorId: number | null;
+  creadorNombre: string | null;
+  resultadosAprendizaje: LearningOutcomeResponse[];
 }
 
 export interface CaseRequest {
@@ -26,6 +43,9 @@ export interface CaseFilters extends PageRequest {
   [key: string]: QueryValue;
   activo?: boolean;
   search?: string;
+  nivelDificultad?: string;
+  creadorId?: number;
+  rdaSearch?: string;
 }
 
 export interface SceneResponse {
@@ -52,12 +72,14 @@ export interface QuestionResponse {
   enunciado: string;
   obligatoria: boolean;
   activo: boolean;
+  pesoPuntos: number | null;
 }
 
 export interface QuestionRequest {
   enunciado: string;
   obligatoria?: boolean | null;
   activo?: boolean | null;
+  pesoPuntos?: number | null;
 }
 
 export interface OptionResponse {
@@ -67,6 +89,7 @@ export interface OptionResponse {
   descripcion: string | null;
   orden: number;
   activo: boolean;
+  porcentajeCredito: number | null;
 }
 
 export interface OptionRequest {
@@ -74,6 +97,7 @@ export interface OptionRequest {
   descripcion?: string | null;
   orden: number;
   activo?: boolean | null;
+  porcentajeCredito?: number | null;
 }
 
 export interface ToolResponse {
@@ -107,4 +131,5 @@ export interface CaseBuilderResponse {
   escenas: BuilderSceneResponse[];
   herramientas: ToolResponse[];
   entidades: InstitutionalEntityResponse[];
+  resultadosAprendizaje: LearningOutcomeResponse[];
 }

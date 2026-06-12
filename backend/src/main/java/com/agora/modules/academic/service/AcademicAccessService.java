@@ -11,6 +11,7 @@ class AcademicAccessService {
 
     static final String ADMIN = "ADMINISTRADOR";
     static final String TEACHER = "DOCENTE";
+    static final String TEACHER_ADMIN = "DOCENTE_ADMIN";
     static final String STUDENT = "ESTUDIANTE";
 
     boolean isAdmin(UserPrincipal principal) {
@@ -18,7 +19,7 @@ class AcademicAccessService {
     }
 
     boolean isTeacher(UserPrincipal principal) {
-        return TEACHER.equals(principal.rol());
+        return TEACHER.equals(principal.rol()) || TEACHER_ADMIN.equals(principal.rol());
     }
 
     boolean isStudent(UserPrincipal principal) {

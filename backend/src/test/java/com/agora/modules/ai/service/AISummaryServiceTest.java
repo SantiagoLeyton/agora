@@ -66,7 +66,7 @@ class AISummaryServiceTest {
                 "ESTUDIANTE", true);
         teacherPrincipal = new UserPrincipal(2L, "Docente", "Agora", "docente@agora.com", "hash", "DOCENTE",
                 true);
-        Caso caso = withId(new Caso("Caso IA", null, null, "BASICO", 30), 10L);
+        Caso caso = withId(new Caso("Caso IA", null, null, "BASICO", 30, null), 10L);
         Grupo grupo = withId(new Grupo(teacher, "Grupo", null, "2026-1"), 20L);
         Programacion programacion = withId(new Programacion(grupo, teacher, 10L, Instant.now(), Instant.now()), 30L);
         intento = withId(new Intento(student, caso, programacion), 40L);

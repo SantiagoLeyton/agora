@@ -4,6 +4,7 @@ import com.agora.modules.academic.dto.CreateScheduleRequest;
 import com.agora.modules.academic.dto.ScheduleResponse;
 import com.agora.modules.academic.dto.UpdateScheduleRequest;
 import com.agora.modules.academic.service.ScheduleService;
+import com.agora.security.SecurityExpressions;
 import com.agora.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -40,7 +41,7 @@ public class ScheduleController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.TEACHER_ACTIVITY)
     @Operation(summary = "Create an academic schedule for a group owned by the authenticated teacher")
     public ScheduleResponse crear(@Valid @RequestBody CreateScheduleRequest request,
             @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
@@ -48,7 +49,7 @@ public class ScheduleController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE','ESTUDIANTE')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE_ADMIN','DOCENTE','ESTUDIANTE')")
     @Operation(summary = "List academic schedules visible to the authenticated user")
     public Page<ScheduleResponse> listar(
             @RequestParam(required = false) Long grupoId,
@@ -61,14 +62,14 @@ public class ScheduleController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE','ESTUDIANTE')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE_ADMIN','DOCENTE','ESTUDIANTE')")
     @Operation(summary = "Get an academic schedule by id")
     public ScheduleResponse consultar(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal) {
         return scheduleService.consultar(id, principal);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.TEACHER_ACTIVITY)
     @Operation(summary = "Update an academic schedule owned by the authenticated teacher")
     public ScheduleResponse actualizar(@PathVariable Long id, @Valid @RequestBody UpdateScheduleRequest request,
             @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {

@@ -1,3 +1,5 @@
+import type { Role } from "@/types/auth";
+
 export type UserRole = "student" | "teacher" | "admin";
 
 export interface User {
@@ -5,6 +7,7 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
+  backendRole?: Role;
   avatar?: string;
   institution?: string;
 }
@@ -40,6 +43,11 @@ export interface SimulationCase {
   patientModel?: PatientLive2DModel;
   /** Caso creado por docente (persistido en navegador) */
   isCustom?: boolean;
+  authorId?: string;
+  authorName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  isActive?: boolean;
 }
 
 export interface DialogueOption {

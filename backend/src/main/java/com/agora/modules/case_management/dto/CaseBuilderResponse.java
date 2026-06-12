@@ -6,7 +6,8 @@ public record CaseBuilderResponse(
         CaseResponse caso,
         List<BuilderSceneResponse> escenas,
         List<ToolResponse> herramientas,
-        List<InstitutionalEntityResponse> entidades) {
+        List<InstitutionalEntityResponse> entidades,
+        List<LearningOutcomeResponse> resultadosAprendizaje) {
 
     public record BuilderSceneResponse(SceneResponse escena, List<BuilderQuestionResponse> preguntas) {
     }

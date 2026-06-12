@@ -43,4 +43,5 @@ public interface IntentoRepository extends JpaRepository<Intento, Long> {
     List<Intento> findForTeacherMetricsAdmin(
             @Param("periodo") String periodo,
             @Param("grupoId") Long grupoId);
+
 }

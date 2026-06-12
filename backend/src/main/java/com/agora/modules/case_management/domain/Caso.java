@@ -1,13 +1,16 @@
 package com.agora.modules.case_management.domain;
 
+import com.agora.modules.user.domain.Usuario;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
@@ -52,6 +55,10 @@ public class Caso {
     @Column(name = "fecha_actualizacion", nullable = false)
     private Instant fechaActualizacion = Instant.now();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "creador_id")
+    private Usuario creador;
+
     @OneToMany(mappedBy = "caso")
     @OrderBy("orden ASC")
     private Set<Escena> escenas = new HashSet<>();
@@ -68,12 +75,14 @@ public class Caso {
             inverseJoinColumns = @JoinColumn(name = "entidad_id"))
     private Set<EntidadInstitucional> entidades = new HashSet<>();
 
-    public Caso(String titulo, String descripcion, String objetivo, String nivelDificultad, Integer duracionEstimada) {
+    public Caso(String titulo, String descripcion, String objetivo, String nivelDificultad, Integer duracionEstimada,
+            Usuario creador) {
         this.titulo = titulo;
         this.descripcion = descripcion;
         this.objetivo = objetivo;
         this.nivelDificultad = nivelDificultad;
         this.duracionEstimada = duracionEstimada;
+        this.creador = creador;
     }
 
     public void actualizar(String titulo, String descripcion, String objetivo, String nivelDificultad,
@@ -102,5 +111,15 @@ public class Caso {
 
     public void asociar(EntidadInstitucional entidad) {
         entidades.add(entidad);
+    }
+
+    public void desasociar(Herramienta herramienta) {
+        herramientas.remove(herramienta);
+        fechaActualizacion = Instant.now();
+    }
+
+    public void desasociar(EntidadInstitucional entidad) {
+        entidades.remove(entidad);
+        fechaActualizacion = Instant.now();
     }
 }

@@ -3,6 +3,7 @@ package com.agora.modules.academic.controller;
 import com.agora.modules.academic.dto.AddGroupStudentRequest;
 import com.agora.modules.academic.dto.GroupStudentResponse;
 import com.agora.modules.academic.service.GroupService;
+import com.agora.security.SecurityExpressions;
 import com.agora.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -35,7 +36,7 @@ public class GroupStudentController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.TEACHER_ACTIVITY)
     @Operation(summary = "Add a student to a group owned by the authenticated teacher")
     public GroupStudentResponse agregar(@PathVariable Long groupId, @Valid @RequestBody AddGroupStudentRequest request,
             @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
@@ -44,7 +45,7 @@ public class GroupStudentController {
 
     @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasRole('DOCENTE')")
+    @PreAuthorize(SecurityExpressions.TEACHER_ACTIVITY)
     @Operation(summary = "Remove a student from a group owned by the authenticated teacher")
     public void eliminar(@PathVariable Long groupId, @RequestParam Long estudianteId,
             @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
@@ -52,7 +53,7 @@ public class GroupStudentController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE','ESTUDIANTE')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE_ADMIN','DOCENTE','ESTUDIANTE')")
     @Operation(summary = "List students in a visible group")
     public List<GroupStudentResponse> listar(@PathVariable Long groupId,
             @AuthenticationPrincipal UserPrincipal principal) {
