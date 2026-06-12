@@ -8,6 +8,7 @@ import type {
   AISummaryResponse,
   AttemptResponse,
   AttemptSummaryResponse,
+  CreateFeedbackRequest,
   FeedbackResponse,
   JournalResponse,
   SimulationResponse,
@@ -35,6 +36,11 @@ export const attemptService = {
     ),
   feedback: (attemptId: number) =>
     httpClient.get<FeedbackResponse[]>(`${attemptPath(attemptId)}/feedback`),
+  createFeedback: (attemptId: number, request: CreateFeedbackRequest) =>
+    httpClient.post<FeedbackResponse, CreateFeedbackRequest>(
+      `${attemptPath(attemptId)}/feedback`,
+      request
+    ),
   journal: (attemptId: number) =>
     httpClient.get<JournalResponse[]>(`${attemptPath(attemptId)}/journal`),
   summary: (attemptId: number) =>

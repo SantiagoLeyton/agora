@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClinicalSessionHeader } from "@/components/simulator/ClinicalSessionHeader";
@@ -40,7 +39,6 @@ import {
   buildClinicalSessionSummary,
   buildFormativeFeedbackPreview,
 } from "@/lib/clinical-session-summary";
-import { ClinicalSessionArtifacts } from "@/components/simulator/ClinicalSessionArtifacts";
 import { getComplementaryLive2DModel } from "@/lib/live2d-models";
 import { PSYCHOLOGIST_STATE_LABELS } from "@/lib/session-participants";
 import {
@@ -503,7 +501,11 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
               </Link>
             </Button>
             <Button
-              onClick={() => router.push("/evaluation")}
+              onClick={() =>
+                session?.attemptId
+                  ? router.push(`/evaluation/results/${session.attemptId}`)
+                  : router.push("/evaluation")
+              }
               className="w-full sm:w-auto"
             >
               Ver análisis completo

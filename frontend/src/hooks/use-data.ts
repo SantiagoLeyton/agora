@@ -4,6 +4,8 @@ import { queryInvalidation } from "@/lib/query-invalidation";
 import { evaluationService } from "@/services/api";
 import { attemptService, type AttemptFilters } from "@/services/attempt-service";
 import { clinicalCaseService } from "@/services/case-service";
+import { teacherFeedbackService } from "@/services/teacher-feedback-service";
+import { teacherMetricsService } from "@/services/teacher-metrics-service";
 import { simulationService } from "@/services/simulation-service";
 import { mapCaseToSimulationCase } from "@/lib/case-adapters";
 import {
@@ -32,8 +34,9 @@ import type {
   UserFilters,
 } from "@/types/academic-admin";
 import type { CaseFilters, CaseRequest, OptionRequest, QuestionRequest, SceneRequest } from "@/types/clinical-case";
-import type { AISummaryRequest, AnswerSimulationRequest, StartSimulationRequest } from "@/types/simulation";
+import type { AISummaryRequest, AnswerSimulationRequest, CreateFeedbackRequest, StartSimulationRequest } from "@/types/simulation";
 import type { CreateCaseBundleRequest } from "@/services/case-service";
+import type { TeacherMetricsFilters } from "@/types/teacher-metrics";
 
 export function useCases(filters: CaseFilters = { activo: true, size: 100 }) {
   return useQuery({
@@ -97,6 +100,41 @@ export function useAttemptFeedback(attemptId?: number) {
     queryKey: queryKeys.attempts.feedback(attemptId ?? 0),
     queryFn: () => attemptService.feedback(attemptId ?? 0),
     enabled: Number.isFinite(attemptId),
+  });
+}
+
+export function useTeacherFeedbackQueue() {
+  return useQuery({
+    queryKey: queryKeys.teacherFeedback.all(),
+    queryFn: () => teacherFeedbackService.list(),
+  });
+}
+
+export function useTeacherMetrics(filters: TeacherMetricsFilters = {}) {
+  return useQuery({
+    queryKey: queryKeys.teacherMetrics.detail(filters),
+    queryFn: () => teacherMetricsService.get(filters),
+  });
+}
+
+export function useCreateFeedback() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      attemptId,
+      request,
+    }: {
+      attemptId: number;
+      request: CreateFeedbackRequest;
+    }) => attemptService.createFeedback(attemptId, request),
+    onSuccess: (_, { attemptId }) => {
+      queryInvalidation.attemptFeedback(queryClient, attemptId);
+      queryInvalidation.attemptSummary(queryClient, attemptId);
+      queryInvalidation.attempts(queryClient);
+      queryInvalidation.teacherFeedback(queryClient);
+      queryInvalidation.evaluations(queryClient);
+    },
   });
 }
 

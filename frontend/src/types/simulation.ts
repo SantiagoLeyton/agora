@@ -84,6 +84,11 @@ export interface FeedbackResponse {
   fechaGeneracion: string;
 }
 
+export interface CreateFeedbackRequest {
+  contenido: string;
+  observaciones?: string | null;
+}
+
 export interface AttemptSummaryResponse {
   intento: AttemptResponse;
   caso: CaseResponse;

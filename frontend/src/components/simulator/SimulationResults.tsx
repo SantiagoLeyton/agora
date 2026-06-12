@@ -10,7 +10,7 @@ import type {
   FormativeFeedbackSlot,
 } from "@/types/clinical-session-artifacts";
 import type { ClinicalImpactDelta } from "@/lib/clinical-impact";
-import { AlertCircle, Zap, Target, Lightbulb, Award, BookOpen } from "lucide-react";
+import { AlertCircle, Zap, Target, Lightbulb, BookOpen } from "lucide-react";
 
 interface SimulationResultsProps {
   summary?: ClinicalSessionSummary | null;
@@ -100,7 +100,7 @@ export function SimulationResults({
               {summary.closingNote && (
                 <div className="pt-2 mt-3 border-t border-border/30">
                   <p className="mt-3 p-3 rounded bg-muted/30 border border-border/30 text-xs italic text-muted-foreground/80 leading-relaxed">
-                    "{summary.closingNote}"
+                    &ldquo;{summary.closingNote}&rdquo;
                   </p>
                 </div>
               )}

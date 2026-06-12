@@ -42,4 +42,6 @@ export const queryInvalidation = {
     queryClient.invalidateQueries({ queryKey: queryKeys.schedules.all() }),
   assignments: (queryClient: QueryClient) =>
     queryClient.invalidateQueries({ queryKey: queryKeys.assignments() }),
+  teacherFeedback: (queryClient: QueryClient) =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.teacherFeedback.all() }),
 } as const;

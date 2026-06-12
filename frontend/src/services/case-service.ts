@@ -15,11 +15,47 @@ import type {
 } from "@/types/clinical-case";
 import type { PageResponse } from "@/types/page";
 
+export interface CreateCaseBundleQuestion {
+  question: QuestionRequest;
+  options: OptionRequest[];
+}
+
+export interface CreateCaseBundleScene {
+  scene: SceneRequest;
+  questions: CreateCaseBundleQuestion[];
+}
+
 export interface CreateCaseBundleRequest {
   case: CaseRequest;
-  scene: SceneRequest;
-  question: QuestionRequest;
-  options: [OptionRequest, OptionRequest];
+  scenes: CreateCaseBundleScene[];
+}
+
+export function validateCaseBundleRequest(
+  request: CreateCaseBundleRequest
+): string | null {
+  if (!request.scenes.length) {
+    return "El caso debe tener al menos una escena.";
+  }
+
+  for (let sceneIndex = 0; sceneIndex < request.scenes.length; sceneIndex += 1) {
+    const sceneBundle = request.scenes[sceneIndex];
+    if (!sceneBundle.questions.length) {
+      return `La escena ${sceneIndex + 1} debe tener al menos una pregunta.`;
+    }
+
+    for (
+      let questionIndex = 0;
+      questionIndex < sceneBundle.questions.length;
+      questionIndex += 1
+    ) {
+      const questionBundle = sceneBundle.questions[questionIndex];
+      if (questionBundle.options.length < 2) {
+        return `La pregunta ${questionIndex + 1} de la escena ${sceneIndex + 1} debe tener al menos 2 opciones.`;
+      }
+    }
+  }
+
+  return null;
 }
 
 export const clinicalCaseService = {
@@ -60,20 +96,31 @@ export const clinicalCaseService = {
       request
     ),
   createBundle: async (request: CreateCaseBundleRequest) => {
+    const validationError = validateCaseBundleRequest(request);
+    if (validationError) {
+      throw new Error(validationError);
+    }
+
     const createdCase = await clinicalCaseService.create(request.case);
-    const createdScene = await clinicalCaseService.createScene(
-      createdCase.id,
-      request.scene
-    );
-    const createdQuestion = await clinicalCaseService.createQuestion(
-      createdScene.id,
-      request.question
-    );
-    await Promise.all(
-      request.options.map((option) =>
-        clinicalCaseService.createOption(createdQuestion.id, option)
-      )
-    );
+
+    for (const sceneBundle of request.scenes) {
+      const createdScene = await clinicalCaseService.createScene(
+        createdCase.id,
+        sceneBundle.scene
+      );
+
+      for (const questionBundle of sceneBundle.questions) {
+        const createdQuestion = await clinicalCaseService.createQuestion(
+          createdScene.id,
+          questionBundle.question
+        );
+
+        for (const option of questionBundle.options) {
+          await clinicalCaseService.createOption(createdQuestion.id, option);
+        }
+      }
+    }
+
     return clinicalCaseService.builder(createdCase.id);
   },
 } as const;

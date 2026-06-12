@@ -53,4 +53,11 @@ export const queryKeys = {
     detail: (id: number) => ["schedules", id] as const,
   },
   assignments: () => ["assignments"] as const,
+  teacherFeedback: {
+    all: () => ["teacher", "feedback"] as const,
+  },
+  teacherMetrics: {
+    all: () => ["teacher", "metrics"] as const,
+    detail: (filters?: unknown) => ["teacher", "metrics", filters] as const,
+  },
 } as const;

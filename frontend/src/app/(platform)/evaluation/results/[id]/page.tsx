@@ -15,8 +15,10 @@ import {
 } from "@/components/design-system";
 import { MetricsOverview } from "@/modules/evaluation/components/evaluation-cards";
 import { useEvaluation, useGenerateAISummary } from "@/hooks/use-data";
+import { ApiError } from "@/services/api-error";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { useState } from "react";
 
 interface EvaluationResultPageProps {
   params: Promise<{ id: string }>;
@@ -27,6 +29,34 @@ export default function EvaluationResultPage({ params }: EvaluationResultPagePro
   const { data: result, isLoading } = useEvaluation(id);
   const attemptId = Number(id);
   const generateAISummary = useGenerateAISummary(attemptId, id);
+  const [aiNotice, setAiNotice] = useState<string | null>(null);
+
+  const handleGenerateAISummary = () => {
+    setAiNotice(null);
+    generateAISummary.mutate(
+      {},
+      {
+        onSuccess: (summary) => {
+          if (!summary.fueExitosa) {
+            setAiNotice(
+              summary.mensajeError
+                ? `Se generó una respuesta alternativa porque el proveedor IA no respondió correctamente: ${summary.mensajeError}`
+                : "Se generó una respuesta alternativa porque el proveedor IA no respondió correctamente."
+            );
+            return;
+          }
+          setAiNotice("Resumen IA generado correctamente.");
+        },
+        onError: (error) => {
+          setAiNotice(
+            error instanceof ApiError
+              ? error.message
+              : "No se pudo generar el resumen IA. Intenta nuevamente."
+          );
+        },
+      }
+    );
+  };
 
   if (isLoading) return <PageLoading />;
 
@@ -136,12 +166,23 @@ export default function EvaluationResultPage({ params }: EvaluationResultPagePro
           <Button
             size="sm"
             disabled={generateAISummary.isPending || !Number.isFinite(attemptId)}
-            onClick={() => generateAISummary.mutate({})}
+            onClick={handleGenerateAISummary}
           >
             <Sparkles className="h-4 w-4" />
             {generateAISummary.isPending ? "Generando resumen IA" : "Generar resumen IA"}
           </Button>
-          {generateAISummary.isError && (
+          {aiNotice && (
+            <p
+              className={`text-xs ${
+                generateAISummary.isError || aiNotice.includes("alternativa")
+                  ? "text-destructive"
+                  : "text-muted-foreground"
+              }`}
+            >
+              {aiNotice}
+            </p>
+          )}
+          {generateAISummary.isError && !aiNotice && (
             <p className="text-xs text-destructive">
               No se pudo generar el resumen IA. Intenta nuevamente.
             </p>
