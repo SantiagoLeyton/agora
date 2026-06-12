@@ -2,33 +2,6 @@ import type { User, UserRole } from "@/types";
 
 export const INSTITUTION_NAME = "Universidad Evangelica";
 
-export const PREVIEW_ACCOUNTS: Array<Omit<User, "id">> = [
-  {
-    email: "estudiante@agora.com",
-    name: "Estudiante Agora",
-    role: "student",
-    institution: INSTITUTION_NAME,
-  },
-  {
-    email: "docente@agora.com",
-    name: "Docente Agora",
-    role: "teacher",
-    institution: INSTITUTION_NAME,
-  },
-  {
-    email: "docente_admin@agora.com",
-    name: "Docente Admin Agora",
-    role: "teacher",
-    institution: INSTITUTION_NAME,
-  },
-  {
-    email: "admin@agora.com",
-    name: "Admin Agora",
-    role: "admin",
-    institution: INSTITUTION_NAME,
-  },
-];
-
 export function getRoleHomePath(role: UserRole): string {
   switch (role) {
     case "teacher":

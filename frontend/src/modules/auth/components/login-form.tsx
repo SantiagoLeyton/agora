@@ -10,7 +10,7 @@ import { SessionLogo } from "@/components/shared/session-logo";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { SplashScreen } from "@/components/shared/splash-screen";
 import { useAuthStore } from "@/store";
-import { getRoleHomePath, PREVIEW_ACCOUNTS } from "@/lib/auth";
+import { getRoleHomePath } from "@/lib/auth";
 import { ApiError } from "@/services/api-error";
 import { BRAND } from "@/lib/branding";
 import { useAuthRedirect } from "@/hooks/use-auth-redirect";
@@ -37,8 +37,8 @@ export function LoginForm() {
   useAuthRedirect();
   const router = useRouter();
   const login = useAuthStore((s) => s.login);
-  const [email, setEmail] = useState("docente@agora.com");
-  const [password, setPassword] = useState("Agora12345*");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -57,12 +57,6 @@ export function LoginForm() {
       );
       setLoading(false);
     }
-  };
-
-  const fillDemo = (demoEmail: string) => {
-    setEmail(demoEmail);
-    setPassword("Agora12345*");
-    setError("");
   };
 
   if (loading) {
@@ -229,38 +223,6 @@ export function LoginForm() {
                 </button>
               </motion.div>
             </form>
-
-            {/* Demo — discreto */}
-            <motion.div
-              variants={item}
-              className="mt-6 border-t border-slate-200/80 pt-5 dark:border-slate-700/60"
-            >
-              <p className="mb-2.5 text-center text-[11px] text-slate-400">
-                Vista previa · selecciona un perfil
-              </p>
-              <div className="flex justify-center gap-1.5">
-                {PREVIEW_ACCOUNTS.map((account) => (
-                  <button
-                    key={account.email}
-                    type="button"
-                    onClick={() => fillDemo(account.email)}
-                    className={cn(
-                      "rounded-md px-2.5 py-1 text-[11px] font-medium text-slate-500",
-                      "transition-all duration-150",
-                      "hover:bg-slate-100 hover:text-slate-800",
-                      email === account.email &&
-                        "bg-slate-100 text-[hsl(215,50%,32%)] ring-1 ring-slate-200"
-                    )}
-                  >
-                    {account.role === "student"
-                      ? "Estudiante"
-                      : account.role === "teacher"
-                        ? "Docente"
-                        : "Admin"}
-                  </button>
-                ))}
-              </div>
-            </motion.div>
 
             <motion.p
               variants={item}
