@@ -1,3 +1,5 @@
+import type { PedagogicalInsights } from "@/types/pedagogical";
+
 export interface TeacherMetricsOverview {
   enrolledParticipants: number;
   activeSchedules: number;
@@ -56,6 +58,7 @@ export interface TeacherMetricsResponse {
   byGroup: GroupMetrics[];
   semesterSummary: TeacherMetricsSemesterSummary;
   participation: TeacherMetricsParticipation;
+  pedagogicalInsights: PedagogicalInsights;
   metadata: TeacherMetricsMetadata;
 }
 

@@ -12,7 +12,8 @@ public interface PreguntaRepository extends JpaRepository<Pregunta, Long> {
 
     @Query("""
             SELECT p FROM Pregunta p
-            JOIN p.escena e
+            JOIN FETCH p.escena e
+            LEFT JOIN FETCH p.resultadoAprendizaje
             WHERE e.caso.id = :casoId
             AND p.activo = true
             AND p.pesoPuntos IS NOT NULL

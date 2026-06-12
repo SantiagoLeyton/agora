@@ -43,6 +43,10 @@ public class Pregunta {
     @Column(name = "peso_puntos", precision = 10, scale = 2)
     private BigDecimal pesoPuntos;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "resultado_aprendizaje_id")
+    private ResultadoAprendizaje resultadoAprendizaje;
+
     @OneToMany(mappedBy = "pregunta")
     private Set<Opcion> opciones = new HashSet<>();
 
@@ -51,16 +55,24 @@ public class Pregunta {
     }
 
     public Pregunta(Escena escena, String enunciado, boolean obligatoria, BigDecimal pesoPuntos) {
+        this(escena, enunciado, obligatoria, pesoPuntos, null);
+    }
+
+    public Pregunta(Escena escena, String enunciado, boolean obligatoria, BigDecimal pesoPuntos,
+            ResultadoAprendizaje resultadoAprendizaje) {
         this.escena = escena;
         this.enunciado = enunciado;
         this.obligatoria = obligatoria;
         this.pesoPuntos = pesoPuntos;
+        this.resultadoAprendizaje = resultadoAprendizaje;
     }
 
-    public void actualizar(String enunciado, boolean obligatoria, boolean activo, BigDecimal pesoPuntos) {
+    public void actualizar(String enunciado, boolean obligatoria, boolean activo, BigDecimal pesoPuntos,
+            ResultadoAprendizaje resultadoAprendizaje) {
         this.enunciado = enunciado;
         this.obligatoria = obligatoria;
         this.activo = activo;
         this.pesoPuntos = pesoPuntos;
+        this.resultadoAprendizaje = resultadoAprendizaje;
     }
 }

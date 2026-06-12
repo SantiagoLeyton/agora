@@ -2,6 +2,8 @@ package com.agora.modules.simulation.service;
 
 import com.agora.infrastructure.audit.OperationalAuditService;
 import com.agora.modules.case_management.dto.CaseResponse;
+import com.agora.modules.case_management.dto.LearningOutcomeResponse;
+import com.agora.modules.case_management.repository.ResultadoAprendizajeRepository;
 import com.agora.modules.simulation.domain.Intento;
 import com.agora.modules.simulation.dto.AttemptAnswerResponse;
 import com.agora.modules.simulation.dto.AttemptResponse;
@@ -30,6 +32,7 @@ public class AttemptSummaryService {
     private final EstadoIntentoRepository estadoIntentoRepository;
     private final BitacoraRepository bitacoraRepository;
     private final RetroalimentacionRepository retroalimentacionRepository;
+    private final ResultadoAprendizajeRepository resultadoRepository;
     private final OperationalAuditService auditService;
 
     @Transactional(readOnly = true)
@@ -38,7 +41,11 @@ public class AttemptSummaryService {
         accessService.validarLectura(intento, principal);
         Usuario actor = accessService.actor(principal);
         auditService.registrar(actor, "ATTEMPT_SUMMARY_VIEWED", MODULE, "Resumen consultado: intento " + attemptId, ip);
-        return new AttemptSummaryResponse(AttemptResponse.from(intento), CaseResponse.from(intento.getCaso()),
+        var resultados = resultadoRepository.findByCasoIdOrderByOrdenAsc(intento.getCaso().getId()).stream()
+                .map(LearningOutcomeResponse::from)
+                .toList();
+        return new AttemptSummaryResponse(AttemptResponse.from(intento),
+                CaseResponse.from(intento.getCaso(), resultados),
                 respuestaRepository.findByIntentoIdOrderByFechaRespuestaAsc(attemptId).stream()
                         .map(AttemptAnswerResponse::from)
                         .toList(),

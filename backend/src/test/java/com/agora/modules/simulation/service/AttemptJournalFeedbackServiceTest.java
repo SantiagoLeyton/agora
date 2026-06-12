@@ -13,6 +13,7 @@ import com.agora.modules.case_management.domain.Escena;
 import com.agora.modules.case_management.domain.Pregunta;
 import com.agora.modules.case_management.repository.EscenaRepository;
 import com.agora.modules.case_management.repository.PreguntaRepository;
+import com.agora.modules.case_management.repository.ResultadoAprendizajeRepository;
 import com.agora.modules.simulation.domain.Bitacora;
 import com.agora.modules.simulation.domain.EstadoEmocional;
 import com.agora.modules.simulation.domain.EstadoIntento;
@@ -49,6 +50,7 @@ class AttemptJournalFeedbackServiceTest {
     @Mock EstadoIntentoRepository estadoIntentoRepository;
     @Mock EscenaRepository escenaRepository;
     @Mock PreguntaRepository preguntaRepository;
+    @Mock ResultadoAprendizajeRepository resultadoAprendizajeRepository;
     @Mock AttemptAccessService accessService;
     @Mock OperationalAuditService auditService;
 
@@ -68,7 +70,7 @@ class AttemptJournalFeedbackServiceTest {
         feedbackService = new AttemptFeedbackService(retroalimentacionRepository, respuestaRepository,
                 estadoIntentoRepository, escenaRepository, preguntaRepository, accessService, auditService);
         summaryService = new AttemptSummaryService(accessService, respuestaRepository, estadoIntentoRepository,
-                bitacoraRepository, retroalimentacionRepository, auditService);
+                bitacoraRepository, retroalimentacionRepository, resultadoAprendizajeRepository, auditService);
         student = withId(new Usuario(new Rol("ESTUDIANTE", ""), "Estudiante", "Agora",
                 "estudiante@agora.com", "hash"), 1L);
         teacher = withId(new Usuario(new Rol("DOCENTE", ""), "Docente", "Agora",

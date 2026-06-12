@@ -9,10 +9,12 @@ public record QuestionResponse(
         String enunciado,
         boolean obligatoria,
         boolean activo,
-        BigDecimal pesoPuntos) {
+        BigDecimal pesoPuntos,
+        Long resultadoAprendizajeId) {
 
     public static QuestionResponse from(Pregunta pregunta) {
+        Long rdaId = pregunta.getResultadoAprendizaje() == null ? null : pregunta.getResultadoAprendizaje().getId();
         return new QuestionResponse(pregunta.getId(), pregunta.getEscena().getId(), pregunta.getEnunciado(),
-                pregunta.isObligatoria(), pregunta.isActivo(), pregunta.getPesoPuntos());
+                pregunta.isObligatoria(), pregunta.isActivo(), pregunta.getPesoPuntos(), rdaId);
     }
 }

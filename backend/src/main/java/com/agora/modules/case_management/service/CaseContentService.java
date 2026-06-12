@@ -5,6 +5,7 @@ import com.agora.modules.case_management.domain.Caso;
 import com.agora.modules.case_management.domain.Escena;
 import com.agora.modules.case_management.domain.Opcion;
 import com.agora.modules.case_management.domain.Pregunta;
+import com.agora.modules.case_management.domain.ResultadoAprendizaje;
 import com.agora.modules.case_management.dto.OptionRequest;
 import com.agora.modules.case_management.dto.OptionResponse;
 import com.agora.modules.case_management.dto.QuestionRequest;
@@ -14,6 +15,7 @@ import com.agora.modules.case_management.dto.SceneResponse;
 import com.agora.modules.case_management.repository.EscenaRepository;
 import com.agora.modules.case_management.repository.OpcionRepository;
 import com.agora.modules.case_management.repository.PreguntaRepository;
+import com.agora.modules.case_management.repository.ResultadoAprendizajeRepository;
 import com.agora.modules.user.domain.Usuario;
 import com.agora.modules.user.repository.UsuarioRepository;
 import com.agora.security.UserPrincipal;
@@ -34,6 +36,7 @@ public class CaseContentService {
     private final EscenaRepository escenaRepository;
     private final PreguntaRepository preguntaRepository;
     private final OpcionRepository opcionRepository;
+    private final ResultadoAprendizajeRepository resultadoRepository;
     private final UsuarioRepository usuarioRepository;
     private final OperationalAuditService auditService;
 
@@ -77,7 +80,8 @@ public class CaseContentService {
     @Transactional
     public QuestionResponse crearPregunta(Long escenaId, QuestionRequest request, UserPrincipal principal, String ip) {
         Pregunta pregunta = preguntaRepository.save(new Pregunta(buscarEscena(escenaId), request.enunciado(),
-                request.obligatoria() == null || request.obligatoria(), request.pesoPuntos()));
+                request.obligatoria() == null || request.obligatoria(), request.pesoPuntos(),
+                resolverResultadoAprendizaje(request.resultadoAprendizajeId())));
         audit(principal, "QUESTION_CREATED", "Pregunta creada: " + pregunta.getId(), ip);
         return QuestionResponse.from(pregunta);
     }
@@ -91,7 +95,8 @@ public class CaseContentService {
     public QuestionResponse actualizarPregunta(Long id, QuestionRequest request, UserPrincipal principal, String ip) {
         Pregunta pregunta = buscarPregunta(id);
         pregunta.actualizar(request.enunciado(), request.obligatoria() == null || request.obligatoria(),
-                request.activo() == null || request.activo(), request.pesoPuntos());
+                request.activo() == null || request.activo(), request.pesoPuntos(),
+                resolverResultadoAprendizaje(request.resultadoAprendizajeId()));
         audit(principal, "QUESTION_UPDATED", "Pregunta actualizada: " + id, ip);
         return QuestionResponse.from(preguntaRepository.save(pregunta));
     }
@@ -147,6 +152,14 @@ public class CaseContentService {
 
     Opcion buscarOpcion(Long id) {
         return opcionRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Opcion no encontrada"));
+    }
+
+    private ResultadoAprendizaje resolverResultadoAprendizaje(Long resultadoAprendizajeId) {
+        if (resultadoAprendizajeId == null) {
+            return null;
+        }
+        return resultadoRepository.findById(resultadoAprendizajeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Resultado de aprendizaje no encontrado"));
     }
 
     private void audit(UserPrincipal principal, String accion, String descripcion, String ip) {

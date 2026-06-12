@@ -14,8 +14,10 @@ import {
   InsightHighlight,
 } from "@/components/design-system";
 import { MetricsOverview } from "@/modules/evaluation/components/evaluation-cards";
+import { FeedbackComparisonPanel } from "@/modules/evaluation/components/feedback-comparison-panel";
+import { RdaEvaluationPanel } from "@/modules/evaluation/components/rda-evaluation-panel";
 import { useEvaluation, useGenerateAISummary } from "@/hooks/use-data";
-import { formatAcademicGrade } from "@/lib/evaluation-adapters";
+import { extractFeedbackComparison, formatAcademicGrade } from "@/lib/evaluation-adapters";
 import { ApiError } from "@/services/api-error";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -123,6 +125,14 @@ export default function EvaluationResultPage({ params }: EvaluationResultPagePro
       )}
 
       <MetricsOverview metrics={result.metrics} />
+
+      <RdaEvaluationPanel items={result.rdaEvaluation ?? []} />
+
+      {result.summary && (
+        <FeedbackComparisonPanel
+          data={extractFeedbackComparison(result.summary, result.aiSummaries ?? [])}
+        />
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Surface>

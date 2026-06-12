@@ -73,6 +73,7 @@ export interface QuestionResponse {
   obligatoria: boolean;
   activo: boolean;
   pesoPuntos: number | null;
+  resultadoAprendizajeId: number | null;
 }
 
 export interface QuestionRequest {
@@ -80,6 +81,7 @@ export interface QuestionRequest {
   obligatoria?: boolean | null;
   activo?: boolean | null;
   pesoPuntos?: number | null;
+  resultadoAprendizajeId?: number | null;
 }
 
 export interface OptionResponse {

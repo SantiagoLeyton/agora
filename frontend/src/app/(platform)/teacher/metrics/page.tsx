@@ -18,6 +18,7 @@ import {
   mapEmotionalProfileToRadarMetrics,
   mapTeacherMetricsToOverviewStats,
 } from "@/lib/teacher-metrics-adapters";
+import { PedagogicalInsightsPanel } from "@/modules/teacher/components/pedagogical-insights-panel";
 import { useTeacherMetrics } from "@/hooks/use-data";
 import { ApiError } from "@/services/api-error";
 
@@ -74,6 +75,8 @@ export default function TeacherMetricsPage() {
       )}
 
       <MetricGrid stats={overviewStats} icons={teacherMetricIcons} />
+
+      <PedagogicalInsightsPanel insights={metrics.pedagogicalInsights} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Surface>

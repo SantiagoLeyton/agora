@@ -12,5 +12,6 @@ public record QuestionRequest(
         Boolean obligatoria,
         Boolean activo,
         @DecimalMin(value = "0.0", inclusive = false, message = "El peso debe ser mayor a cero")
-        BigDecimal pesoPuntos) {
+        BigDecimal pesoPuntos,
+        Long resultadoAprendizajeId) {
 }

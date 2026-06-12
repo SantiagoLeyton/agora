@@ -9,6 +9,7 @@ public record TeacherMetricsResponse(
         List<GroupMetrics> byGroup,
         SemesterSummaryMetrics semesterSummary,
         ParticipationMetrics participation,
+        PedagogicalInsightsResponse pedagogicalInsights,
         MetricsMetadata metadata) {
 
     public record OverviewMetrics(

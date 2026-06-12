@@ -6,6 +6,7 @@ import { attemptService, type AttemptFilters } from "@/services/attempt-service"
 import { clinicalCaseService } from "@/services/case-service";
 import { teacherFeedbackService } from "@/services/teacher-feedback-service";
 import { teacherMetricsService } from "@/services/teacher-metrics-service";
+import { pedagogicalService } from "@/services/pedagogical-service";
 import { studentSessionService } from "@/services/student-session-service";
 import { simulationService } from "@/services/simulation-service";
 import { mapCaseToSimulationCase } from "@/lib/case-adapters";
@@ -109,6 +110,29 @@ export function useTeacherFeedbackQueue() {
   return useQuery({
     queryKey: queryKeys.teacherFeedback.all(),
     queryFn: () => teacherFeedbackService.list(),
+  });
+}
+
+export function useMyAcademicProgress() {
+  return useQuery({
+    queryKey: ["academic-progress", "me"],
+    queryFn: () => pedagogicalService.myProgress(),
+  });
+}
+
+export function useStudentAcademicProgress(studentId: number) {
+  return useQuery({
+    queryKey: ["academic-progress", studentId],
+    queryFn: () => pedagogicalService.studentProgress(studentId),
+    enabled: Number.isFinite(studentId),
+  });
+}
+
+export function useRdaEvaluation(attemptId?: number) {
+  return useQuery({
+    queryKey: ["rda-evaluation", attemptId ?? 0],
+    queryFn: () => pedagogicalService.rdaEvaluation(attemptId ?? 0),
+    enabled: Number.isFinite(attemptId),
   });
 }
 

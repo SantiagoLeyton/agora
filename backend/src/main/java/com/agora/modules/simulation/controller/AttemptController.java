@@ -11,6 +11,7 @@ import com.agora.modules.simulation.service.AttemptFeedbackService;
 import com.agora.modules.simulation.service.AttemptJournalService;
 import com.agora.modules.simulation.service.AttemptQueryService;
 import com.agora.modules.simulation.service.AttemptSummaryService;
+import com.agora.security.SecurityExpressions;
 import com.agora.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -47,14 +48,14 @@ public class AttemptController {
     private final AttemptQueryService queryService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE','ESTUDIANTE')")
+    @PreAuthorize(SecurityExpressions.ACADEMIC_PARTICIPANT)
     @Operation(summary = "List attempts visible to the authenticated user")
     public Page<AttemptResponse> listar(@AuthenticationPrincipal UserPrincipal principal, Pageable pageable) {
         return queryService.listar(principal, pageable);
     }
 
     @GetMapping("/{attemptId}")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE','ESTUDIANTE')")
+    @PreAuthorize(SecurityExpressions.ACADEMIC_PARTICIPANT)
     @Operation(summary = "Get an attempt by id")
     public AttemptResponse obtener(@PathVariable Long attemptId,
             @AuthenticationPrincipal UserPrincipal principal) {
@@ -72,7 +73,7 @@ public class AttemptController {
     }
 
     @GetMapping("/{attemptId}/journal")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE','ESTUDIANTE')")
+    @PreAuthorize(SecurityExpressions.ACADEMIC_PARTICIPANT)
     @Operation(summary = "List journal entries for an attempt")
     public List<JournalResponse> listarBitacora(@PathVariable Long attemptId,
             @AuthenticationPrincipal UserPrincipal principal) {
@@ -99,7 +100,7 @@ public class AttemptController {
 
     @PostMapping("/{attemptId}/feedback")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE')")
+    @PreAuthorize(SecurityExpressions.TEACHER_FEEDBACK)
     @Operation(summary = "Create teacher feedback for an attempt")
     public FeedbackResponse crearFeedback(@PathVariable Long attemptId,
             @Valid @RequestBody CreateFeedbackRequest request, @AuthenticationPrincipal UserPrincipal principal,
@@ -108,7 +109,7 @@ public class AttemptController {
     }
 
     @GetMapping("/{attemptId}/feedback")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE','ESTUDIANTE')")
+    @PreAuthorize(SecurityExpressions.ACADEMIC_PARTICIPANT)
     @Operation(summary = "List feedback for an attempt")
     public List<FeedbackResponse> listarFeedback(@PathVariable Long attemptId,
             @AuthenticationPrincipal UserPrincipal principal) {
@@ -116,7 +117,7 @@ public class AttemptController {
     }
 
     @GetMapping("/{attemptId}/summary")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE','ESTUDIANTE')")
+    @PreAuthorize(SecurityExpressions.ACADEMIC_PARTICIPANT)
     @Operation(summary = "Get academic summary for an attempt")
     public AttemptSummaryResponse resumen(@PathVariable Long attemptId,
             @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {

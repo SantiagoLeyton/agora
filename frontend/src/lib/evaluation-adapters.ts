@@ -1,12 +1,15 @@
 import type { EvaluationMetric, EvaluationResult } from "@/types";
+import type { RdaEvaluationItem } from "@/types/pedagogical";
 import type {
   AISummaryHistoryResponse,
+  AISummaryResponse,
   AttemptAnswerResponse,
   AttemptResponse,
   AttemptSummaryResponse,
   FeedbackResponse,
   SimulationStateResponse,
 } from "@/types/simulation";
+import type { FeedbackComparisonData } from "@/modules/evaluation/components/feedback-comparison-panel";
 
 const POSITIVE_STATES = new Set(["CONFIANZA", "COOPERACION"]);
 const CHALLENGE_STATES = new Set(["ANSIEDAD", "ESTRES", "RESISTENCIA"]);
@@ -116,6 +119,20 @@ function resolveAcademicScore(attempt: AttemptResponse): number | null {
   return Number(attempt.notaFinal);
 }
 
+export function formatScoreLabel(score: number | null): string {
+  if (score == null) return "N/D";
+  return `${score.toFixed(1)} / 5`;
+}
+
+export function extractFeedbackComparison(
+  summary: AttemptSummaryResponse,
+  aiSummaries: AISummaryResponse[] = []
+): FeedbackComparisonData {
+  const teacher = summary.retroalimentaciones.filter((item) => item.autor === "DOCENTE");
+  const system = summary.retroalimentaciones.filter((item) => item.autor === "SISTEMA");
+  return { teacher, system, ai: aiSummaries };
+}
+
 export function formatAcademicGrade(attempt: AttemptResponse): string {
   if (attempt.notaFinal == null) {
     return "Sin calificación configurada";
@@ -130,7 +147,8 @@ export function formatAcademicGrade(attempt: AttemptResponse): string {
 export function mapAttemptSummaryToEvaluation(
   attempt: AttemptResponse,
   summary: AttemptSummaryResponse,
-  aiHistory?: AISummaryHistoryResponse
+  aiHistory?: AISummaryHistoryResponse,
+  rdaEvaluation?: RdaEvaluationItem[]
 ): EvaluationResult {
   return {
     id: String(attempt.id),
@@ -146,6 +164,7 @@ export function mapAttemptSummaryToEvaluation(
     attempt,
     summary,
     aiSummaries: aiHistory?.sintesis ?? [],
+    rdaEvaluation,
   };
 }
 

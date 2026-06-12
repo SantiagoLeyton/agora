@@ -105,6 +105,7 @@ export interface EvaluationResult {
   attempt?: import("@/types/simulation").AttemptResponse;
   summary?: import("@/types/simulation").AttemptSummaryResponse;
   aiSummaries?: import("@/types/simulation").AISummaryResponse[];
+  rdaEvaluation?: import("@/types/pedagogical").RdaEvaluationItem[];
 }
 
 export interface Student {

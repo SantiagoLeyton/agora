@@ -7,6 +7,7 @@ import com.agora.modules.simulation.dto.SimulationStartedResponse;
 import com.agora.modules.simulation.dto.SimulationStateResponse;
 import com.agora.modules.simulation.dto.StartSimulationRequest;
 import com.agora.modules.simulation.service.SimulationService;
+import com.agora.security.SecurityExpressions;
 import com.agora.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -45,7 +46,7 @@ public class SimulationController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE','ESTUDIANTE')")
+    @PreAuthorize(SecurityExpressions.ACADEMIC_PARTICIPANT)
     @Operation(summary = "Get a simulation attempt")
     public SimulationResponse consultar(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal) {
         return simulationService.consultar(id, principal);
@@ -60,7 +61,7 @@ public class SimulationController {
     }
 
     @GetMapping("/{id}/states")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE','ESTUDIANTE')")
+    @PreAuthorize(SecurityExpressions.ACADEMIC_PARTICIPANT)
     @Operation(summary = "Get current emotional states for a simulation")
     public List<SimulationStateResponse> estados(@PathVariable Long id,
             @AuthenticationPrincipal UserPrincipal principal) {

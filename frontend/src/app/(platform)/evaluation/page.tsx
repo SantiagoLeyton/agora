@@ -84,12 +84,16 @@ export default function EvaluationPage() {
         <Surface variant="muted" className="flex h-64 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         </Surface>
-      ) : (
+      ) : evaluations && evaluations.length > 0 ? (
         <div className="grid gap-6 lg:grid-cols-2">
-          {evaluations?.map((result, index) => (
+          {evaluations.map((result, index) => (
             <EvaluationCard key={result.id} result={result} index={index} />
           ))}
         </div>
+      ) : (
+        <Surface variant="muted" className="py-12 text-center text-sm text-muted-foreground">
+          Aún no tienes evaluaciones registradas. Completa una simulación para recibir retroalimentación.
+        </Surface>
       )}
     </div>
   );

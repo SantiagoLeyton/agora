@@ -61,10 +61,12 @@ public class TeacherMetricsService {
     private final RespuestaRepository respuestaRepository;
     private final BitacoraRepository bitacoraRepository;
     private final SintesisIaRepository sintesisIaRepository;
+    private final PedagogicalInsightsService pedagogicalInsightsService;
 
     @Transactional(readOnly = true)
     public TeacherMetricsResponse obtener(String periodo, Long grupoId, UserPrincipal principal) {
-        boolean isAdmin = "ADMINISTRADOR".equals(principal.rol());
+        boolean isAdmin = "ADMINISTRADOR".equals(principal.rol())
+                || "DOCENTE_ADMIN".equals(principal.rol());
         Long docenteId = isAdmin ? null : principal.id();
         List<Grupo> groups = grupoRepository.findAll(filterGroups(docenteId, periodo, grupoId));
         List<Intento> attempts = isAdmin
@@ -107,6 +109,7 @@ public class TeacherMetricsService {
 
         SemesterSummaryMetrics semesterSummary = buildSemesterSummary(attempts);
         ParticipationMetrics participation = buildParticipationMetrics(attemptIds);
+        var pedagogicalInsights = pedagogicalInsightsService.build(attempts);
 
         return new TeacherMetricsResponse(
                 new OverviewMetrics(
@@ -122,6 +125,7 @@ public class TeacherMetricsService {
                 byGroup,
                 semesterSummary,
                 participation,
+                pedagogicalInsights,
                 new MetricsMetadata(periodo, Instant.now(), completedAttempts, ACADEMIC_NOTICE));
     }
 

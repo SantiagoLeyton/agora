@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Surface, InsightHighlight } from "@/components/design-system";
 import type { EvaluationResult } from "@/types";
+import { formatScoreLabel } from "@/lib/evaluation-adapters";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -20,10 +21,8 @@ export function EvaluationOverview({ evaluations }: EvaluationOverviewProps) {
   const scoredEvaluations = evaluations.filter((e) => e.score !== null);
   const avgScore =
     scoredEvaluations.length > 0
-      ? Math.round(
-          scoredEvaluations.reduce((s, e) => s + (e.score ?? 0), 0) /
-            scoredEvaluations.length
-        )
+      ? scoredEvaluations.reduce((s, e) => s + (e.score ?? 0), 0) /
+        scoredEvaluations.length
       : null;
   const latest = evaluations[0];
 
@@ -33,7 +32,7 @@ export function EvaluationOverview({ evaluations }: EvaluationOverviewProps) {
         <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-success/10 blur-2xl" />
         <p className="text-sm font-medium text-muted-foreground">Evolución formativa</p>
         <p className="mt-1 font-display text-4xl font-semibold tabular-nums">
-          {avgScore === null ? "N/D" : `${avgScore}%`}
+          {formatScoreLabel(avgScore)}
         </p>
         <p className="mt-2 flex items-center gap-1 text-xs text-success">
           <TrendingUp className="h-3 w-3" />
@@ -55,7 +54,7 @@ export function EvaluationOverview({ evaluations }: EvaluationOverviewProps) {
             </div>
             <InsightHighlight
               label="Puntuación clínica"
-              value={latest.score === null ? "N/D" : `${latest.score}%`}
+              value={formatScoreLabel(latest.score)}
             />
           </div>
           <p className="mt-4 border-l-2 border-primary/25 pl-4 text-sm leading-relaxed text-muted-foreground">
@@ -82,9 +81,9 @@ export function EvaluationCard({ result, index }: EvaluationCardProps) {
   const scoreColor =
     result.score === null
       ? "text-muted-foreground"
-      : result.score >= 80
+      : result.score >= 4
         ? "text-success"
-        : result.score >= 60
+        : result.score >= 3
           ? "text-foreground"
           : "text-warning";
 
@@ -111,7 +110,7 @@ export function EvaluationCard({ result, index }: EvaluationCardProps) {
               </div>
             </div>
             <p className={cn("font-display text-2xl font-semibold tabular-nums", scoreColor)}>
-              {result.score === null ? "N/D" : `${result.score}%`}
+              {formatScoreLabel(result.score)}
             </p>
           </div>
         </div>

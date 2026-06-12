@@ -37,7 +37,7 @@ public class AttemptAccessService {
         if ("ESTUDIANTE".equals(principal.rol()) && intento.getEstudiante().getId().equals(principal.id())) {
             return;
         }
-        if ("DOCENTE".equals(principal.rol()) && docenteDelIntento(intento, principal.id())) {
+        if (isTeacherRole(principal.rol()) && docenteDelIntento(intento, principal.id())) {
             return;
         }
         throw new AccessDeniedException("No tiene permiso para consultar este intento");
@@ -53,10 +53,14 @@ public class AttemptAccessService {
         if ("ADMINISTRADOR".equals(principal.rol())) {
             return;
         }
-        if ("DOCENTE".equals(principal.rol()) && docenteDelIntento(intento, principal.id())) {
+        if (isTeacherRole(principal.rol()) && docenteDelIntento(intento, principal.id())) {
             return;
         }
         throw new AccessDeniedException("No tiene permiso para retroalimentar este intento");
+    }
+
+    private boolean isTeacherRole(String role) {
+        return "DOCENTE".equals(role) || "DOCENTE_ADMIN".equals(role);
     }
 
     private boolean docenteDelIntento(Intento intento, Long docenteId) {

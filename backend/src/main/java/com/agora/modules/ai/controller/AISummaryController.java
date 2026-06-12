@@ -4,6 +4,7 @@ import com.agora.modules.ai.dto.AISummaryHistoryResponse;
 import com.agora.modules.ai.dto.AISummaryRequest;
 import com.agora.modules.ai.dto.AISummaryResponse;
 import com.agora.modules.ai.service.AISummaryService;
+import com.agora.security.SecurityExpressions;
 import com.agora.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -41,7 +42,7 @@ public class AISummaryController {
     }
 
     @GetMapping("/summary")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE','ESTUDIANTE')")
+    @PreAuthorize(SecurityExpressions.ACADEMIC_PARTICIPANT)
     @Operation(summary = "List previous AI summaries for an attempt")
     public AISummaryHistoryResponse listar(@PathVariable Long attemptId,
             @AuthenticationPrincipal UserPrincipal principal) {

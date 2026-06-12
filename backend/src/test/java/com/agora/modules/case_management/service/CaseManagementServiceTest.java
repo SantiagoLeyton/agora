@@ -61,7 +61,7 @@ class CaseManagementServiceTest {
         caseService = new CaseService(casoRepository, herramientaRepository, entidadRepository, usuarioRepository,
                 resultadoRepository, auditService);
         contentService = new CaseContentService(caseService, escenaRepository, preguntaRepository, opcionRepository,
-                usuarioRepository, auditService);
+                resultadoRepository, usuarioRepository, auditService);
         builderService = new CaseBuilderService(caseService, learningOutcomeService, escenaRepository, preguntaRepository,
                 opcionRepository);
         teacher = new UserPrincipal(1L, "Docente", "Agora", "docente@agora.com", "hash", "DOCENTE", true);
@@ -103,7 +103,7 @@ class CaseManagementServiceTest {
         when(preguntaRepository.findById(30L)).thenReturn(Optional.of(pregunta));
         when(opcionRepository.save(any(Opcion.class))).thenAnswer(invocation -> withId(invocation.getArgument(0), 40L));
 
-        var question = contentService.crearPregunta(20L, new QuestionRequest("Pregunta", true, true, null),
+        var question = contentService.crearPregunta(20L, new QuestionRequest("Pregunta", true, true, null, null),
                 teacher, "127.0.0.1");
         var option = contentService.crearOpcion(30L, new OptionRequest("Opcion", "Desc", 1, true, null),
                 teacher, "127.0.0.1");

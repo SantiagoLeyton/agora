@@ -2,6 +2,7 @@ package com.agora.modules.metrics.controller;
 
 import com.agora.modules.metrics.dto.TeacherMetricsResponse;
 import com.agora.modules.metrics.service.TeacherMetricsService;
+import com.agora.security.SecurityExpressions;
 import com.agora.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -24,7 +25,7 @@ public class TeacherMetricsController {
     private final TeacherMetricsService teacherMetricsService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE')")
+    @PreAuthorize(SecurityExpressions.TEACHER_METRICS)
     @Operation(summary = "Get aggregated teacher metrics from existing simulation and academic data")
     public TeacherMetricsResponse obtener(
             @RequestParam(required = false) String periodo,

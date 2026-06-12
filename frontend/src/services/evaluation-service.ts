@@ -3,6 +3,7 @@ import {
   mapAttemptSummaryToEvaluation,
 } from "@/lib/evaluation-adapters";
 import { attemptService } from "@/services/attempt-service";
+import { pedagogicalService } from "@/services/pedagogical-service";
 import type { EvaluationResult } from "@/types";
 import type { AttemptResponse } from "@/types/simulation";
 
@@ -17,12 +18,18 @@ async function loadAiHistory(attemptId: number) {
 }
 
 async function hydrateEvaluation(attempt: AttemptResponse): Promise<EvaluationResult> {
-  const [summary, aiHistory] = await Promise.all([
+  const [summary, aiHistory, rdaEvaluation] = await Promise.all([
     attemptService.summary(attempt.id),
     loadAiHistory(attempt.id),
+    pedagogicalService.rdaEvaluation(attempt.id).catch(() => null),
   ]);
 
-  return mapAttemptSummaryToEvaluation(attempt, summary, aiHistory);
+  return mapAttemptSummaryToEvaluation(
+    attempt,
+    summary,
+    aiHistory,
+    rdaEvaluation?.resultados
+  );
 }
 
 export const evaluationService = {
