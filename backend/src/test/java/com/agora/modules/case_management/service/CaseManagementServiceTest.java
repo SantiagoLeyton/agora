@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.agora.infrastructure.audit.OperationalAuditService;
+import com.agora.modules.academic.repository.ProgramacionRepository;
 import com.agora.modules.case_management.domain.Caso;
 import com.agora.modules.case_management.domain.Escena;
 import com.agora.modules.case_management.domain.Opcion;
@@ -47,6 +48,7 @@ class CaseManagementServiceTest {
     @Mock OpcionRepository opcionRepository;
     @Mock UsuarioRepository usuarioRepository;
     @Mock ResultadoAprendizajeRepository resultadoRepository;
+    @Mock ProgramacionRepository programacionRepository;
     @Mock LearningOutcomeService learningOutcomeService;
     @Mock OperationalAuditService auditService;
 
@@ -59,7 +61,7 @@ class CaseManagementServiceTest {
     @BeforeEach
     void setUp() {
         caseService = new CaseService(casoRepository, herramientaRepository, entidadRepository, usuarioRepository,
-                resultadoRepository, auditService);
+                resultadoRepository, programacionRepository, auditService);
         contentService = new CaseContentService(caseService, escenaRepository, preguntaRepository, opcionRepository,
                 resultadoRepository, usuarioRepository, auditService);
         builderService = new CaseBuilderService(caseService, learningOutcomeService, escenaRepository, preguntaRepository,

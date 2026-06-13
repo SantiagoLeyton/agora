@@ -149,23 +149,33 @@ export function ClinicalCaseCard({ caseItem, index = 0 }: ClinicalCaseCardProps)
             </div>
           )}
 
-          <div className="mt-5 flex gap-2 border-t border-border/40 pt-4">
-            <Button asChild variant="outline" size="sm" className="flex-1 bg-card/80">
-              <Link href={`/simulator/${caseItem.id}`}>
+          <div className="mt-5 flex flex-col gap-2 border-t border-border/40 pt-4">
+            <Button asChild variant="outline" size="sm" className="w-full bg-card/80">
+              <Link
+                href={
+                  caseItem.programacionActivaId
+                    ? `/simulator/${caseItem.id}?programacionId=${caseItem.programacionActivaId}`
+                    : `/simulator/${caseItem.id}`
+                }
+              >
                 <BookOpen className="h-3.5 w-3.5" />
-                Expediente
+                Ver expediente
               </Link>
             </Button>
-            <Button asChild size="sm" className="flex-1 shadow-[var(--shadow-sm)]">
-              <Link href={`/simulator/${caseItem.id}/play`}>
-                {caseItem.status === "completed"
-                  ? "Revisar"
-                  : caseItem.status === "in_progress"
-                    ? "Continuar"
-                    : "Iniciar"}
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
+            {caseItem.presentable ? (
+              <Button asChild size="sm" className="w-full shadow-[var(--shadow-sm)]">
+                <Link
+                  href={`/simulator/${caseItem.id}?programacionId=${caseItem.programacionActivaId}`}
+                >
+                  Presentar caso
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            ) : caseItem.mensajePresentacion ? (
+              <p className="rounded-lg border border-dashed border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+                {caseItem.mensajePresentacion}
+              </p>
+            ) : null}
           </div>
         </div>
       </div>

@@ -64,6 +64,16 @@ public class AttemptAccessService {
     }
 
     private boolean docenteDelIntento(Intento intento, Long docenteId) {
-        return intento.getProgramacion() != null && intento.getProgramacion().getDocente().getId().equals(docenteId);
+        if (intento.getProgramacion() == null) {
+            return false;
+        }
+        if (intento.getProgramacion().getDocente().getId().equals(docenteId)) {
+            return true;
+        }
+        if (intento.getProgramacion().getGrupo().getDocente().getId().equals(docenteId)) {
+            return true;
+        }
+        return intento.getCaso().getCreador() != null
+                && intento.getCaso().getCreador().getId().equals(docenteId);
     }
 }

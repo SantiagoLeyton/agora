@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Mail, Lock, ArrowRight } from "lucide-react";
 import { SessionLogo } from "@/components/shared/session-logo";
@@ -11,6 +12,7 @@ import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { SplashScreen } from "@/components/shared/splash-screen";
 import { useAuthStore } from "@/store";
 import { getRoleHomePath } from "@/lib/auth";
+import { resetUserScopedClientState } from "@/lib/user-session-cleanup";
 import { ApiError } from "@/services/api-error";
 import { BRAND } from "@/lib/branding";
 import { useAuthRedirect } from "@/hooks/use-auth-redirect";
@@ -36,6 +38,7 @@ const item = {
 export function LoginForm() {
   useAuthRedirect();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const login = useAuthStore((s) => s.login);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,6 +50,7 @@ export function LoginForm() {
     setLoading(true);
     setError("");
     try {
+      resetUserScopedClientState(queryClient);
       const user = await login(email, password);
       router.push(getRoleHomePath(user.role));
     } catch (loginError) {
@@ -224,18 +228,6 @@ export function LoginForm() {
               </motion.div>
             </form>
 
-            <motion.p
-              variants={item}
-              className="mt-5 text-center text-[13px] text-slate-500 dark:text-slate-400"
-            >
-              ¿Sin cuenta?{" "}
-              <Link
-                href="/register"
-                className="font-medium text-[hsl(215,50%,38%)] hover:underline"
-              >
-                Solicitar acceso
-              </Link>
-            </motion.p>
           </motion.div>
 
           <p className="mt-5 text-center text-[11px] text-slate-500/90 dark:text-slate-500">

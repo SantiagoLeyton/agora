@@ -6,103 +6,94 @@ import {
   SectionHeader,
   DataTable,
 } from "@/components/design-system";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { getPageHeroMeta } from "@/lib/page-meta";
 import { BRAND } from "@/lib/branding";
+import { useRoles } from "@/hooks/use-data";
 
 const permissions = [
-  { module: "Simulador", student: true, teacher: true, admin: true },
-  { module: "Evaluación", student: true, teacher: true, admin: true },
-  { module: "Panel docente", student: false, teacher: true, admin: true },
-  { module: "Administración", student: false, teacher: false, admin: true },
+  { module: "Cursos", estudiante: true, docente: true, docenteAdmin: true, administrador: true },
+  { module: "Simulador", estudiante: true, docente: true, docenteAdmin: true, administrador: false },
+  { module: "Evaluación y feedback", estudiante: true, docente: true, docenteAdmin: true, administrador: true },
+  { module: "Gestión de casos clínicos", estudiante: false, docente: false, docenteAdmin: true, administrador: true },
+  { module: "Métricas pedagógicas", estudiante: false, docente: true, docenteAdmin: true, administrador: true },
+  { module: "Usuarios institucionales", estudiante: false, docente: false, docenteAdmin: false, administrador: true },
 ];
 
 export default function AdminSettingsPage() {
   const meta = getPageHeroMeta("/admin/settings");
+  const { data: roles = [] } = useRoles();
 
   return (
     <div className="space-y-8">
       <HeroSection eyebrow={meta.eyebrow} title={meta.title} description={meta.description} />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Surface>
-          <SectionHeader title="Institución" description="Datos generales de la organización" />
-          <div className="mt-4 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="inst-name">Nombre de la institución</Label>
-              <Input id="inst-name" defaultValue={BRAND.institutionName} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="inst-domain">Dominio de correo</Label>
-              <Input id="inst-domain" defaultValue="@uni.edu" />
-            </div>
-            <Button>Guardar cambios</Button>
-          </div>
-        </Surface>
+      <Surface>
+        <SectionHeader
+          title="Institución"
+          description="Identidad académica fija de la plataforma"
+        />
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <Badge variant="outline">{BRAND.institutionName}</Badge>
+          <p className="text-sm text-muted-foreground">
+            La institución no es configurable desde el panel administrativo.
+          </p>
+        </div>
+      </Surface>
 
-        <Surface>
-          <SectionHeader title="Simulador" description="Configuración del módulo de simulación" />
-          <div className="mt-4 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="session-time">Tiempo máximo por sesión (min)</Label>
-              <Input id="session-time" type="number" defaultValue="90" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="min-score">Puntuación mínima aprobatoria (%)</Label>
-              <Input id="min-score" type="number" defaultValue="70" />
-            </div>
-            <Button>Guardar cambios</Button>
-          </div>
-        </Surface>
+      <Surface>
+        <SectionHeader
+          title="Roles del sistema"
+          description="Roles persistidos en la base de datos"
+        />
+        <div className="mt-4 flex flex-wrap gap-2">
+          {roles.map((role) => (
+            <Badge key={role.id} variant="secondary">
+              {role.nombre}
+            </Badge>
+          ))}
+        </div>
+      </Surface>
 
-        <Surface className="lg:col-span-2">
-          <SectionHeader title="Permisos por rol" description="Control de acceso a módulos del sistema" />
-          <div className="mt-4">
-            <DataTable
-              data={permissions}
-              keyExtractor={(r) => r.module}
-              columns={[
-                { key: "module", header: "Módulo", cell: (r) => <span className="font-medium">{r.module}</span> },
-                {
-                  key: "student",
-                  header: "Estudiante",
-                  className: "text-center",
-                  cell: (r) => (
-                    <span className={r.student ? "text-success" : "text-muted-foreground"}>
-                      {r.student ? "✓" : "—"}
-                    </span>
-                  ),
-                },
-                {
-                  key: "teacher",
-                  header: "Docente",
-                  className: "text-center",
-                  cell: (r) => (
-                    <span className={r.teacher ? "text-success" : "text-muted-foreground"}>
-                      {r.teacher ? "✓" : "—"}
-                    </span>
-                  ),
-                },
-                {
-                  key: "admin",
-                  header: "Admin",
-                  className: "text-center",
-                  cell: (r) => (
-                    <span className={r.admin ? "text-success" : "text-muted-foreground"}>
-                      {r.admin ? "✓" : "—"}
-                    </span>
-                  ),
-                },
-              ]}
-            />
-          </div>
-          <Separator className="my-6" />
-          <Button>Actualizar permisos</Button>
-        </Surface>
-      </div>
+      <Surface>
+        <SectionHeader
+          title="Permisos por rol (solo lectura)"
+          description="Matriz de referencia académica. Los permisos efectivos se aplican en backend y no son editables desde esta pantalla."
+        />
+        <div className="mt-4">
+          <DataTable
+            data={permissions}
+            keyExtractor={(row) => row.module}
+            columns={[
+              { key: "module", header: "Módulo", cell: (row) => <span className="font-medium">{row.module}</span> },
+              {
+                key: "estudiante",
+                header: "Estudiante",
+                className: "text-center",
+                cell: (row) => (row.estudiante ? "✓" : "—"),
+              },
+              {
+                key: "docente",
+                header: "Docente",
+                className: "text-center",
+                cell: (row) => (row.docente ? "✓" : "—"),
+              },
+              {
+                key: "docenteAdmin",
+                header: "Docente Admin",
+                className: "text-center",
+                cell: (row) => (row.docenteAdmin ? "✓" : "—"),
+              },
+              {
+                key: "administrador",
+                header: "Administrador",
+                className: "text-center",
+                cell: (row) => (row.administrador ? "✓" : "—"),
+              },
+            ]}
+          />
+        </div>
+      </Surface>
     </div>
   );
 }

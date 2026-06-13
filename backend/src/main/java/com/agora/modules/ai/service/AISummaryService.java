@@ -13,12 +13,16 @@ import com.agora.modules.ai.repository.SintesisIaRepository;
 import com.agora.modules.case_management.domain.Caso;
 import com.agora.modules.simulation.domain.Bitacora;
 import com.agora.modules.simulation.domain.EstadoIntento;
+import com.agora.modules.simulation.domain.FeedbackAuthor;
 import com.agora.modules.simulation.domain.Intento;
 import com.agora.modules.simulation.domain.Respuesta;
 import com.agora.modules.simulation.repository.BitacoraRepository;
 import com.agora.modules.simulation.repository.EstadoIntentoRepository;
 import com.agora.modules.simulation.repository.RespuestaRepository;
+import com.agora.modules.simulation.repository.RetroalimentacionRepository;
 import com.agora.modules.simulation.service.AttemptAccessService;
+import com.agora.modules.simulation.service.ConsequenceQueryService;
+import com.agora.modules.simulation.service.RdaEvaluationService;
 import com.agora.modules.user.domain.Usuario;
 import com.agora.security.UserPrincipal;
 import java.util.stream.Collectors;
@@ -41,6 +45,9 @@ public class AISummaryService {
     private final RespuestaRepository respuestaRepository;
     private final BitacoraRepository bitacoraRepository;
     private final AttemptAccessService accessService;
+    private final RdaEvaluationService rdaEvaluationService;
+    private final RetroalimentacionRepository retroalimentacionRepository;
+    private final ConsequenceQueryService consequenceQueryService;
     private final OllamaAIProvider ollamaAIProvider;
     private final MockAIProvider mockAIProvider;
     private final OperationalAuditService auditService;
@@ -62,11 +69,8 @@ public class AISummaryService {
                     sintesis.getId());
             return AISummaryResponse.from(sintesis);
         } catch (RuntimeException exception) {
-            SintesisIa fallida = sintesisIaRepository.save(new SintesisIa(intento, prompt,
-                    "La generacion con Ollama no fue exitosa.", "ollama", false, safeMessage(exception)));
-            audit(actor, "AI_SUMMARY_FAILED", "Sintesis IA fallida: " + fallida.getId(), ip);
-            log.warn("ai.summary event=ollama_failed attemptId={} synthesisId={} error={}", attemptId,
-                    fallida.getId(), exception.getClass().getSimpleName());
+            log.warn("ai.summary event=ollama_failed attemptId={} error={}", attemptId,
+                    exception.getClass().getSimpleName());
             return generarFallback(intento, prompt, actor, ip, exception);
         }
     }
@@ -97,26 +101,35 @@ public class AISummaryService {
                 : request.instrucciones().trim();
         return """
                 Eres un asistente academico para estudiantes de Psicologia Social.
-                Genera una sintesis narrativa, observaciones y reflexion academica.
+                Genera un informe estructurado con estas secciones exactas:
+                1) RETROALIMENTACION CLINICA
+                2) RETROALIMENTACION PEDAGOGICA
+                3) RECOMENDACIONES DE MEJORA
+                4) RDA ALCANZADOS
+                5) RDA PENDIENTES
 
                 Reglas obligatorias:
                 - No asignar notas.
-                - No evaluar desempeno.
+                - No evaluar desempeno con calificacion.
                 - No aprobar ni reprobar.
-                - No calificar.
-                - No determinar exito academico.
-                - Unicamente describe, interpreta y sintetiza.
+                - Unicamente describe, interpreta y sintetiza con base en los datos.
 
                 Contexto del intento:
                 """
                 + "Caso: " + caso(intento).getTitulo()
+                + "\nDescripcion: " + caso(intento).getDescripcion()
                 + "\nIntento: " + intento.getId()
-                + "\nEstado del intento: " + intento.getEstado()
+                + "\nEstado: " + intento.getEstado()
+                + "\nNota academica registrada (solo referencia, no reevaluar): "
+                + (intento.getNotaFinal() == null ? "sin nota" : intento.getNotaFinal() + "/5")
                 + "\nRespuestas registradas: " + respuestaRepository.findByIntentoId(intento.getId()).size()
-                + "\nEstados actuales: " + estados(intento)
-                + "\nRespuestas seleccionadas: " + respuestas(intento)
+                + "\nEstados emocionales finales: " + estados(intento)
+                + "\nRespuestas y decisiones: " + respuestas(intento)
+                + "\nConsecuencias clinicas acumuladas: " + consecuencias(intento)
+                + "\nEvaluacion RDA: " + rdaResumen(intento)
+                + "\nRetroalimentacion docente previa: " + feedbackDocente(intento)
                 + "\nBitacoras del estudiante: " + bitacoras(intento)
-                + "\nInstrucciones: " + instrucciones
+                + "\nInstrucciones adicionales: " + instrucciones
                 + "\nRestriccion final: la IA no define calificaciones academicas ni modifica reglas.";
     }
 
@@ -155,6 +168,26 @@ public class AISummaryService {
 
     private String estado(EstadoIntento estado) {
         return estado.getEstadoEmocional().getNombre() + "=" + estado.getValorActual();
+    }
+
+    private String consecuencias(Intento intento) {
+        return consequenceQueryService.listarPorIntento(intento.getId(), UserPrincipal.from(intento.getEstudiante()))
+                .consecuencias().stream()
+                .map(item -> item.mensaje() != null ? item.mensaje() : item.opcion())
+                .collect(Collectors.joining(" | "));
+    }
+
+    private String rdaResumen(Intento intento) {
+        return rdaEvaluationService.evaluarCaso(intento.getCaso().getId(), intento.getId()).stream()
+                .map(item -> "RDA" + item.orden() + " " + item.estado() + " (" + item.compliancePct() + "%)")
+                .collect(Collectors.joining(", "));
+    }
+
+    private String feedbackDocente(Intento intento) {
+        return retroalimentacionRepository.findByIntentoIdOrderByFechaGeneracionAsc(intento.getId()).stream()
+                .filter(item -> item.getAutor() == FeedbackAuthor.DOCENTE)
+                .map(item -> item.getContenido())
+                .collect(Collectors.joining(" | "));
     }
 
     private Caso caso(Intento intento) {

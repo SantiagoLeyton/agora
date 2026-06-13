@@ -19,13 +19,16 @@ export const queryKeys = {
     summary: (id: number) => ["attempts", id, "summary"] as const,
   },
   attempts: {
-    all: () => ["attempts"] as const,
-    list: (filters?: unknown) => ["attempts", "list", filters] as const,
+    all: (userId?: string | null) => ["attempts", userId ?? "anonymous"] as const,
+    list: (userId: string | null | undefined, filters?: unknown) =>
+      ["attempts", userId ?? "anonymous", "list", filters] as const,
     detail: (id: number) => ["attempts", id] as const,
     feedback: (id: number) => ["attempts", id, "feedback"] as const,
     journal: (id: number) => ["attempts", id, "journal"] as const,
     summary: (id: number) => ["attempts", id, "summary"] as const,
     aiSummary: (id: number) => ["attempts", id, "ai", "summary"] as const,
+    consequences: (id: number) => ["attempts", id, "consequences"] as const,
+    pedagogicalAnalysis: (id: number) => ["attempts", id, "pedagogical-analysis"] as const,
   },
   evaluations: {
     all: () => ["evaluations"] as const,
@@ -54,13 +57,13 @@ export const queryKeys = {
   },
   assignments: () => ["assignments"] as const,
   teacherFeedback: {
-    all: () => ["teacher", "feedback"] as const,
+    all: (userId?: string | null) => ["teacher", userId ?? "anonymous", "feedback"] as const,
   },
   teacherMetrics: {
     all: () => ["teacher", "metrics"] as const,
     detail: (filters?: unknown) => ["teacher", "metrics", filters] as const,
   },
   studentSessions: {
-    all: () => ["student", "sessions"] as const,
+    all: (userId?: string | null) => ["student", userId ?? "anonymous", "sessions"] as const,
   },
 } as const;

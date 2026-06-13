@@ -1,25 +1,28 @@
 # IA local con Ollama
 
-Estado: Fase 10.
+Estado: Corrección Mayor 2.
 
-Agora usa una arquitectura de IA desacoplada. El backend no depende de OpenAI, Gemini ni servicios pagos externos. El proveedor principal es Ollama local con el modelo `llama3.1:8b`; el proveedor de respaldo sigue siendo `MockAIProvider`.
+Ágora usa una arquitectura de IA desacoplada. El proveedor principal es **Ollama** (`llama3.1:8b`); si falla, el backend activa **MockAIProvider** y, en última instancia, una síntesis determinística — sin responder HTTP 500.
 
 ## Arquitectura
 
-- Puerto: `AIProvider`
-- Proveedor principal: `OllamaAIProvider`
-- Proveedor fallback: `MockAIProvider`
-- Servicio orquestador: `AISummaryService`
-- Persistencia: `sintesis_ia`
-- Endpoints:
-  - `POST /api/v1/attempts/{attemptId}/ai/summary`
-  - `GET /api/v1/attempts/{attemptId}/ai/summary`
+| Componente | Rol |
+|----------|-----|
+| `AIProvider` | Puerto de abstracción |
+| `OllamaAIProvider` | Proveedor principal (`POST /api/generate`) |
+| `MockAIProvider` | Fallback estructurado |
+| `AISummaryService` | Orquestación + persistencia en `sintesis_ia` |
+| `PedagogicalAnalysisService` | Análisis pedagógico **determinístico** (RDA, estados, consecuencias) |
 
-El servicio intenta generar la sintesis con Ollama. Si Ollama falla por timeout, conexion rechazada, modelo inexistente, respuesta vacia, respuesta invalida, error HTTP o excepcion inesperada, el error se persiste y se ejecuta `MockAIProvider`. El usuario final recibe una sintesis alternativa y la API no debe responder 500 por fallos del proveedor IA.
+### Endpoints
 
-## Configuracion
+- `POST /api/v1/simulations/{id}/answer` — consecuencia inmediata + estados emocionales
+- `GET /api/v1/attempts/{id}/consequences` — consecuencias acumuladas
+- `GET /api/v1/attempts/{id}/pedagogical-analysis` — feedback clínico/pedagógico estructurado
+- `POST /api/v1/attempts/{id}/ai/summary` — síntesis IA (Ollama → mock → determinístico)
+- `GET /api/v1/attempts/{id}/ai/summary` — historial de síntesis
 
-Configuracion por defecto:
+## Configuración
 
 ```yaml
 ai:
@@ -28,124 +31,54 @@ ai:
 ollama:
   base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
   model: ${OLLAMA_MODEL:llama3.1:8b}
-  timeout-seconds: ${OLLAMA_TIMEOUT_SECONDS:60}
+  timeout-seconds: ${OLLAMA_TIMEOUT_SECONDS:180}
 ```
 
-Cuando el backend corre en Docker y Ollama corre en la maquina host, usar:
+### Docker Compose (recomendado)
+
+Ollama está incluido en `docker-compose.yml` con perfil `full`:
+
+```bash
+docker compose --profile full up -d
+docker exec agora-ollama ollama pull llama3.1:8b
+```
+
+Variables en el contenedor backend:
 
 ```env
-OLLAMA_BASE_URL=http://host.docker.internal:11434
+OLLAMA_BASE_URL=http://ollama:11434
 OLLAMA_MODEL=llama3.1:8b
-OLLAMA_TIMEOUT_SECONDS=60
+OLLAMA_TIMEOUT_SECONDS=180
 ```
 
-No se incluye Ollama en `docker-compose.yml`. Ollama debe ejecutarse como servicio local del sistema operativo.
-
-## Instalacion local de Ollama
-
-1. Instalar Ollama desde el instalador oficial del sistema operativo.
-2. Iniciar el servicio local:
+### Ollama en el host (backend local)
 
 ```bash
 ollama serve
-```
-
-3. Descargar el modelo:
-
-```bash
 ollama pull llama3.1:8b
+export OLLAMA_BASE_URL=http://localhost:11434
 ```
 
-4. Verificar modelos disponibles:
+Si el backend corre en Docker y Ollama en el host: `OLLAMA_BASE_URL=http://host.docker.internal:11434`
+
+## Etiquetas en la UI
+
+| `modeloUtilizado` | `fueExitosa` | Etiqueta |
+|---|---|---|
+| contiene `llama` | `true` | **IA real (Ollama)** |
+| `mock-ai-provider-v1` | `true` | **Fallback mock** |
+| `local-deterministic-fallback-v1` | `false` | **Fallback determinístico** |
+
+## Operación
+
+Documentación operativa completa: [`docs/OLLAMA_RUNBOOK.md`](../OLLAMA_RUNBOOK.md)
+
+Validación automatizada:
 
 ```bash
-ollama list
+node frontend/scripts/validate-phase-cm2.mjs
 ```
 
-## Flujo de generacion
+## Caso oficial CM2
 
-1. El usuario solicita `POST /api/v1/attempts/{attemptId}/ai/summary`.
-2. `AISummaryService` valida permisos sobre el intento.
-3. Se registra `AI_SUMMARY_REQUESTED`.
-4. Se construye un prompt interno con:
-   - informacion del caso
-   - estado final del intento
-   - estados emocionales actuales
-   - respuestas seleccionadas
-   - bitacoras del estudiante
-   - instrucciones academicas del usuario
-   - restricciones explicitas contra calificar o evaluar
-5. `OllamaAIProvider` invoca `POST /api/generate` con `stream=false`.
-6. Si Ollama responde correctamente:
-   - se persiste `sintesis_ia.fue_exitosa=true`
-   - se registra `AI_SUMMARY_GENERATED`
-   - se devuelve la sintesis
-7. Si Ollama falla:
-   - se persiste una sintesis fallida con `fue_exitosa=false`
-   - se registra `AI_SUMMARY_FAILED`
-   - se ejecuta `MockAIProvider`
-   - se persiste y devuelve la sintesis fallback
-
-## Restricciones academicas del prompt
-
-El prompt interno obliga a la IA a:
-
-- no asignar notas
-- no evaluar desempeno
-- no aprobar ni reprobar
-- no calificar
-- no determinar exito academico
-- describir, interpretar y sintetizar unicamente
-
-Estas restricciones preservan la regla central de Agora: la IA no define calificaciones academicas ni modifica reglas de negocio.
-
-## Logs
-
-Los logs estructurados incluyen:
-
-- solicitud de generacion
-- exito del proveedor Ollama
-- tiempo de respuesta
-- falla del proveedor
-- activacion de fallback
-- error controlado
-
-No se registra el prompt completo ni datos sensibles.
-
-## Troubleshooting
-
-`Connection refused`
-
-Ollama no esta corriendo o `OLLAMA_BASE_URL` apunta a un host incorrecto.
-
-`model not found`
-
-Ejecutar:
-
-```bash
-ollama pull llama3.1:8b
-```
-
-Timeout
-
-Incrementar:
-
-```env
-OLLAMA_TIMEOUT_SECONDS=120
-```
-
-Backend en Docker no alcanza Ollama local
-
-Usar:
-
-```env
-OLLAMA_BASE_URL=http://host.docker.internal:11434
-```
-
-Respuesta vacia o invalida
-
-El backend persistira el fallo y devolvera fallback. Revisar logs de Ollama y confirmar que el modelo puede responder con:
-
-```bash
-ollama run llama3.1:8b
-```
+El caso **"Caso juego social PSICOLOGIA SOCIAL"** se carga vía migración `V12__cm2_clinical_consequences_official_case.sql` con 5 escenas, consecuencias clínicas por opción e impactos en los 5 ejes emocionales.

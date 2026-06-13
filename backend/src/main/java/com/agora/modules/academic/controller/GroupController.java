@@ -2,6 +2,7 @@ package com.agora.modules.academic.controller;
 
 import com.agora.modules.academic.dto.CreateGroupRequest;
 import com.agora.modules.academic.dto.GroupResponse;
+import com.agora.modules.academic.dto.JoinGroupRequest;
 import com.agora.modules.academic.dto.UpdateGroupRequest;
 import com.agora.modules.academic.service.GroupService;
 import com.agora.security.SecurityExpressions;
@@ -18,6 +19,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -40,8 +42,8 @@ public class GroupController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize(SecurityExpressions.TEACHER_ACTIVITY)
-    @Operation(summary = "Create an academic group owned by the authenticated teacher")
+    @PreAuthorize(SecurityExpressions.TEACHER_OR_ADMIN)
+    @Operation(summary = "Create an academic group")
     public GroupResponse crear(@Valid @RequestBody CreateGroupRequest request,
             @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
         return groupService.crear(request, principal, clientIp(servletRequest));
@@ -54,9 +56,10 @@ public class GroupController {
             @RequestParam(required = false) String periodo,
             @RequestParam(required = false) Boolean activo,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String scope,
             @PageableDefault(size = 20, sort = "id") Pageable pageable,
             @AuthenticationPrincipal UserPrincipal principal) {
-        return groupService.listar(periodo, activo, search, principal, pageable);
+        return groupService.listar(periodo, activo, search, scope, principal, pageable);
     }
 
     @GetMapping("/{id}")
@@ -67,7 +70,7 @@ public class GroupController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize(SecurityExpressions.TEACHER_ACTIVITY)
+    @PreAuthorize(SecurityExpressions.TEACHER_OR_ADMIN)
     @Operation(summary = "Update an academic group owned by the authenticated teacher")
     public GroupResponse actualizar(@PathVariable Long id, @Valid @RequestBody UpdateGroupRequest request,
             @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
@@ -75,7 +78,7 @@ public class GroupController {
     }
 
     @PatchMapping("/{id}/activate")
-    @PreAuthorize(SecurityExpressions.TEACHER_ACTIVITY)
+    @PreAuthorize(SecurityExpressions.TEACHER_OR_ADMIN)
     @Operation(summary = "Activate an academic group owned by the authenticated teacher")
     public GroupResponse activar(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest servletRequest) {
@@ -83,11 +86,29 @@ public class GroupController {
     }
 
     @PatchMapping("/{id}/deactivate")
-    @PreAuthorize(SecurityExpressions.TEACHER_ACTIVITY)
+    @PreAuthorize(SecurityExpressions.TEACHER_OR_ADMIN)
     @Operation(summary = "Deactivate an academic group owned by the authenticated teacher")
     public GroupResponse desactivar(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal,
             HttpServletRequest servletRequest) {
         return groupService.desactivar(id, principal, clientIp(servletRequest));
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR','DOCENTE_ADMIN','DOCENTE')")
+    @Operation(summary = "Delete an academic group without enrolled students")
+    public void eliminar(@PathVariable Long id, @AuthenticationPrincipal UserPrincipal principal,
+            HttpServletRequest servletRequest) {
+        groupService.eliminar(id, principal, clientIp(servletRequest));
+    }
+
+    @PostMapping("/join")
+    @ResponseStatus(HttpStatus.OK)
+    @PreAuthorize("hasAnyRole('DOCENTE_ADMIN','DOCENTE','ESTUDIANTE')")
+    @Operation(summary = "Join a course using an access key")
+    public GroupResponse unirse(@Valid @RequestBody JoinGroupRequest request,
+            @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
+        return groupService.unirseConClave(request, principal, clientIp(servletRequest));
     }
 
     private String clientIp(HttpServletRequest request) {

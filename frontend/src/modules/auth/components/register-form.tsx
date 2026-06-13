@@ -31,7 +31,7 @@ export function RegisterForm() {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
       <div className="mb-8 flex flex-col items-center">
-        <InstitutionalLogo size="md" subtitle="Universidad Evangélica" />
+        <InstitutionalLogo size="md" subtitle="CUE Alexander Von Humboldt" />
       </div>
       <Card className="border-border/60 shadow-lg">
         <CardHeader>

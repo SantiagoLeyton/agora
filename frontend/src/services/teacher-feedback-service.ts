@@ -11,9 +11,13 @@ async function hydrateFeedbackItem(
   attempt: Awaited<
     ReturnType<typeof attemptService.list>
   >["content"][number]
-): Promise<TeacherFeedbackItem> {
-  const summary = await attemptService.summary(attempt.id);
-  return mapAttemptToTeacherFeedbackItem(attempt, summary);
+): Promise<TeacherFeedbackItem | null> {
+  try {
+    const summary = await attemptService.summary(attempt.id);
+    return mapAttemptToTeacherFeedbackItem(attempt, summary);
+  } catch {
+    return null;
+  }
 }
 
 export const teacherFeedbackService = {
@@ -24,6 +28,13 @@ export const teacherFeedbackService = {
     });
 
     const completedAttempts = filterCompletedAttempts(page.content);
-    return Promise.all(completedAttempts.map(hydrateFeedbackItem));
+    const results = await Promise.allSettled(completedAttempts.map(hydrateFeedbackItem));
+    return results
+      .filter(
+        (result): result is PromiseFulfilledResult<TeacherFeedbackItem | null> =>
+          result.status === "fulfilled"
+      )
+      .map((result) => result.value)
+      .filter((item): item is TeacherFeedbackItem => item != null);
   },
 } as const;

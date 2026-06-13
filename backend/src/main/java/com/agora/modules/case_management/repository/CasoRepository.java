@@ -15,4 +15,7 @@ public interface CasoRepository extends JpaRepository<Caso, Long>, JpaSpecificat
 
     @Query(value = "SELECT EXISTS(SELECT 1 FROM intento WHERE caso_id = :casoId)", nativeQuery = true)
     boolean hasAttempts(@Param("casoId") Long casoId);
+
+    @Query(value = "SELECT EXISTS(SELECT 1 FROM programacion WHERE caso_id = :casoId)", nativeQuery = true)
+    boolean hasProgramaciones(@Param("casoId") Long casoId);
 }

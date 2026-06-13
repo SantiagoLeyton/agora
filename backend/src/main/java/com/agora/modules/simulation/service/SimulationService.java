@@ -23,6 +23,8 @@ import com.agora.modules.simulation.domain.Intento;
 import com.agora.modules.simulation.domain.Respuesta;
 import com.agora.modules.simulation.domain.SimulationStatus;
 import com.agora.modules.simulation.dto.AnswerResponse;
+import com.agora.modules.simulation.dto.ConsequenceDetailResponse;
+import com.agora.modules.simulation.dto.ConsequenceImpactResponse;
 import com.agora.modules.simulation.dto.AnswerSimulationRequest;
 import com.agora.modules.simulation.dto.AttemptResponse;
 import com.agora.modules.simulation.dto.SimulationResponse;
@@ -73,6 +75,7 @@ public class SimulationService {
     private final OperationalAuditService auditService;
     private final AttemptFeedbackService feedbackService;
     private final AttemptGradingService attemptGradingService;
+    private final ConsequenceQueryService consequenceQueryService;
 
     @Transactional
     public SimulationStartedResponse iniciar(StartSimulationRequest request, UserPrincipal principal, String ip) {
@@ -116,11 +119,25 @@ public class SimulationService {
 
         Respuesta respuesta = respuestaRepository.save(new Respuesta(intento, pregunta, opcion));
         Optional<Consecuencia> consecuencia = consecuenciaRepository.findByOpcionId(opcion.getId());
-        String mensaje = consecuencia.map(Consecuencia::getMensaje).orElse(null);
-        consecuencia.ifPresent(value -> aplicarConsecuencia(intento, value, principal, ip));
+        ConsequenceDetailResponse detalle = null;
+        String mensaje = null;
+        if (consecuencia.isPresent()) {
+            Consecuencia value = consecuencia.get();
+            mensaje = value.getMensaje();
+            List<ConsequenceImpactResponse> impactos =
+                    consequenceQueryService.aplicarYConstruirImpactos(intento, value);
+            detalle = new ConsequenceDetailResponse(
+                    value.getId(),
+                    value.getMensaje(),
+                    value.getDescripcion(),
+                    value.getObservacionPedagogica(),
+                    impactos);
+            audit(actor(principal), "STATE_UPDATED",
+                    "Consecuencia aplicada para opcion: " + opcion.getId(), ip);
+        }
         audit(actor(principal), "ANSWER_SUBMITTED", "Respuesta registrada: " + respuesta.getId(), ip);
         return new AnswerResponse(respuesta.getId(), intento.getId(), pregunta.getId(), opcion.getId(), mensaje,
-                estados(intento.getId()));
+                detalle, estados(intento.getId()));
     }
 
     @Transactional(readOnly = true)
@@ -165,20 +182,6 @@ public class SimulationService {
         List<EstadoEmocional> estados = estadoEmocionalRepository.findAll();
         for (EstadoEmocional estado : estados) {
             estadoIntentoRepository.save(new EstadoIntento(intento, estado, estado.getValorInicial()));
-        }
-    }
-
-    private void aplicarConsecuencia(Intento intento, Consecuencia consecuencia, UserPrincipal principal, String ip) {
-        Usuario usuario = actor(principal);
-        List<ConsecuenciaEstado> variaciones = consecuenciaEstadoRepository.findByConsecuenciaId(consecuencia.getId());
-        for (ConsecuenciaEstado variacion : variaciones) {
-            EstadoIntento estadoIntento = estadoIntentoRepository
-                    .findByIntentoIdAndEstadoEmocionalId(intento.getId(), variacion.getEstadoEmocional().getId())
-                    .orElseGet(() -> estadoIntentoRepository.save(new EstadoIntento(intento,
-                            variacion.getEstadoEmocional(), variacion.getEstadoEmocional().getValorInicial())));
-            estadoIntento.aplicarVariacion(variacion.getVariacion());
-            estadoIntentoRepository.save(estadoIntento);
-            audit(usuario, "STATE_UPDATED", "Estado actualizado: " + variacion.getEstadoEmocional().getNombre(), ip);
         }
     }
 
@@ -237,6 +240,10 @@ public class SimulationService {
         }
         if (!programacion.getCasoId().equals(casoId)) {
             throw new BusinessRuleException("La programacion no corresponde al caso indicado");
+        }
+        if (programacion.getEstudiante() != null
+                && !programacion.getEstudiante().getId().equals(estudianteId)) {
+            throw new AccessDeniedException("La programacion no esta asignada a este estudiante");
         }
         return programacion;
     }

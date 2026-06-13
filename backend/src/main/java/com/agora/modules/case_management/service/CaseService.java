@@ -1,6 +1,8 @@
 package com.agora.modules.case_management.service;
 
 import com.agora.infrastructure.audit.OperationalAuditService;
+import com.agora.modules.academic.domain.Programacion;
+import com.agora.modules.academic.repository.ProgramacionRepository;
 import com.agora.modules.case_management.domain.Caso;
 import com.agora.modules.case_management.domain.EntidadInstitucional;
 import com.agora.modules.case_management.domain.Herramienta;
@@ -18,7 +20,9 @@ import com.agora.security.UserPrincipal;
 import com.agora.shared.exception.BusinessRuleException;
 import com.agora.shared.exception.ResourceNotFoundException;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +44,11 @@ public class CaseService {
     private final EntidadInstitucionalRepository entidadRepository;
     private final UsuarioRepository usuarioRepository;
     private final ResultadoAprendizajeRepository resultadoRepository;
+    private final ProgramacionRepository programacionRepository;
     private final OperationalAuditService auditService;
+
+    private static final String MENSAJE_SIN_PROGRAMACION =
+            "Este caso aun no tiene una programacion activa para presentacion.";
 
     @Transactional
     public CaseResponse crear(CaseRequest request, UserPrincipal principal, String ip) {
@@ -55,14 +63,14 @@ public class CaseService {
     public Page<CaseResponse> listar(Boolean activo, String search, String nivelDificultad, Long creadorId,
             String rdaSearch, UserPrincipal principal, Pageable pageable) {
         return casoRepository.findAll(filtrar(activo, search, nivelDificultad, creadorId, rdaSearch, principal), pageable)
-                .map(this::enriquecer);
+                .map(caso -> enriquecer(caso, principal));
     }
 
     @Transactional(readOnly = true)
     public CaseResponse consultar(Long id, UserPrincipal principal) {
         Caso caso = buscarCaso(id);
         validarLectura(caso, principal);
-        return enriquecer(caso);
+        return enriquecer(caso, principal);
     }
 
     @Transactional
@@ -93,9 +101,9 @@ public class CaseService {
     @Transactional
     public void eliminar(Long id, UserPrincipal principal, String ip) {
         Caso caso = buscarCaso(id);
-        if (casoRepository.hasAttempts(id)) {
+        if (casoRepository.hasAttempts(id) || casoRepository.hasProgramaciones(id)) {
             throw new BusinessRuleException(
-                    "No se puede eliminar el caso porque tiene intentos registrados. Desactivalo en su lugar.");
+                    "No se puede eliminar el caso porque tiene intentos o programaciones registradas. Desactivalo en su lugar.");
         }
         casoRepository.delete(caso);
         audit(principal, "CASE_DELETED", "Caso eliminado: " + caso.getTitulo(), ip);
@@ -146,16 +154,37 @@ public class CaseService {
     }
 
     void validarLectura(Caso caso, UserPrincipal principal) {
-        if ("ESTUDIANTE".equals(principal.rol()) && !caso.isActivo()) {
-            throw new AccessDeniedException("El caso no esta activo");
+        if ("ESTUDIANTE".equals(principal.rol())) {
+            if (!caso.isActivo()) {
+                throw new AccessDeniedException("El caso no esta activo");
+            }
+            if (!programacionRepository.existsVisibleForStudent(caso.getId(), principal.id())) {
+                throw new AccessDeniedException("No tiene acceso academico a este caso");
+            }
         }
     }
 
     private CaseResponse enriquecer(Caso caso) {
+        return enriquecer(caso, null);
+    }
+
+    private CaseResponse enriquecer(Caso caso, UserPrincipal principal) {
         List<LearningOutcomeResponse> resultados = resultadoRepository.findByCasoIdOrderByOrdenAsc(caso.getId())
                 .stream()
                 .map(LearningOutcomeResponse::from)
                 .toList();
+        if (principal != null && "ESTUDIANTE".equals(principal.rol())) {
+            Long programacionActivaId = programacionRepository
+                    .findActivePresentationId(caso.getId(), principal.id(), Instant.now())
+                    .orElse(null);
+            boolean presentable = programacionActivaId != null;
+            return CaseResponse.from(
+                    caso,
+                    resultados,
+                    programacionActivaId,
+                    presentable,
+                    presentable ? null : MENSAJE_SIN_PROGRAMACION);
+        }
         return CaseResponse.from(caso, resultados);
     }
 
@@ -165,6 +194,7 @@ public class CaseService {
             List<Predicate> predicates = new ArrayList<>();
             if ("ESTUDIANTE".equals(principal.rol())) {
                 predicates.add(builder.equal(root.get("activo"), true));
+                predicates.add(casoVisibleParaEstudiante(root, query, builder, principal.id()));
             } else if (activo != null) {
                 predicates.add(builder.equal(root.get("activo"), activo));
             }
@@ -190,6 +220,26 @@ public class CaseService {
             }
             return builder.and(predicates.toArray(Predicate[]::new));
         };
+    }
+
+    private Predicate casoVisibleParaEstudiante(
+            Root<Caso> root,
+            jakarta.persistence.criteria.CriteriaQuery<?> query,
+            jakarta.persistence.criteria.CriteriaBuilder builder,
+            Long estudianteId) {
+        Subquery<Long> subquery = query.subquery(Long.class);
+        Root<Programacion> programacionRoot = subquery.from(Programacion.class);
+        var grupoJoin = programacionRoot.join("grupo");
+        var estudianteJoin = grupoJoin.join("estudiantes");
+        subquery.select(programacionRoot.get("casoId"));
+        subquery.where(
+                builder.equal(programacionRoot.get("casoId"), root.get("id")),
+                builder.isNotNull(programacionRoot.get("casoId")),
+                builder.equal(estudianteJoin.get("estudiante").get("id"), estudianteId),
+                builder.or(
+                        builder.isNull(programacionRoot.get("estudiante")),
+                        builder.equal(programacionRoot.get("estudiante").get("id"), estudianteId)));
+        return builder.exists(subquery);
     }
 
     private Usuario buscarUsuario(Long id) {

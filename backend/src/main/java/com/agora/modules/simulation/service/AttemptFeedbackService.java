@@ -16,6 +16,8 @@ import com.agora.modules.simulation.repository.RespuestaRepository;
 import com.agora.modules.simulation.repository.RetroalimentacionRepository;
 import com.agora.modules.user.domain.Usuario;
 import com.agora.security.UserPrincipal;
+import com.agora.shared.exception.BusinessRuleException;
+import com.agora.shared.exception.ResourceNotFoundException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -50,6 +52,26 @@ public class AttemptFeedbackService {
                 request.observaciones()));
         audit(accessService.actor(principal), "FEEDBACK_CREATED", "Retroalimentacion creada: " + feedback.getId(), ip);
         return FeedbackResponse.from(feedback);
+    }
+
+    @Transactional
+    public FeedbackResponse actualizarDocente(Long attemptId, Long feedbackId, CreateFeedbackRequest request,
+            UserPrincipal principal, String ip) {
+        Intento intento = accessService.buscarIntento(attemptId);
+        accessService.validarFeedbackDocenteOAdmin(intento, principal);
+        Retroalimentacion feedback = retroalimentacionRepository.findById(feedbackId)
+                .orElseThrow(() -> new ResourceNotFoundException("Retroalimentacion no encontrada"));
+        if (!feedback.getIntento().getId().equals(attemptId)) {
+            throw new BusinessRuleException("La retroalimentacion no pertenece al intento indicado");
+        }
+        if (feedback.getAutor() != FeedbackAuthor.DOCENTE) {
+            throw new BusinessRuleException("Solo se puede editar retroalimentacion docente");
+        }
+        feedback.actualizar(request.contenido(), request.observaciones());
+        Retroalimentacion guardado = retroalimentacionRepository.save(feedback);
+        audit(accessService.actor(principal), "FEEDBACK_UPDATED",
+                "Retroalimentacion actualizada: " + guardado.getId(), ip);
+        return FeedbackResponse.from(guardado);
     }
 
     @Transactional(readOnly = true)

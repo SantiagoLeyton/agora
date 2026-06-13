@@ -10,5 +10,6 @@ public record CreateScheduleRequest(
         @NotNull(message = "La fecha de inicio es obligatoria")
         Instant fechaInicio,
         @NotNull(message = "La fecha de fin es obligatoria")
-        Instant fechaFin) {
+        Instant fechaFin,
+        Long estudianteId) {
 }

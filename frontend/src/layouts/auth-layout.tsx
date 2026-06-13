@@ -14,7 +14,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
       </div>
 
       <div className="absolute left-6 top-6 hidden md:block">
-        <InstitutionalLogo size="sm" href="/login" subtitle="Universidad Evangélica" />
+        <InstitutionalLogo size="sm" href="/login" subtitle="CUE Alexander Von Humboldt" />
       </div>
 
       <div className="relative z-10 w-full flex justify-center">{children}</div>

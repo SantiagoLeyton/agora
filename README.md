@@ -8,7 +8,7 @@
 
 ## Contexto académico
 
-Este repositorio corresponde al **proyecto nuclear de tercer semestre** del programa de **Ingeniería de Software**, desarrollado en la **Universidad Evangélica** como entrega integradora de arquitectura de software, ingeniería de requisitos, bases de datos, interfaces web y calidad de software.
+Este repositorio corresponde al **proyecto nuclear de tercer semestre** del programa de **Ingeniería de Software**, desarrollado en la **CUE Alexander Von Humboldt** como entrega integradora de arquitectura de software, ingeniería de requisitos, bases de datos, interfaces web y calidad de software.
 
 ### Equipo de desarrollo
 
@@ -112,8 +112,10 @@ La aplicación web usa **App Router** de Next.js con rutas segmentadas por rol:
 
 - Avatares **Live2D** y animaciones **Rive** para representar al paciente.
 - Panel de diálogo clínico con decisiones ramificadas.
-- Timeline de fases de sesión y estados emocionales en tiempo real.
-- Integración completa con la API REST del backend (sin datos mock en producción).
+- **Consecuencias clínicas inmediatas** tras cada respuesta (mensaje + impacto emocional).
+- **Radar pentagonal** (ANSIEDAD, ESTRÉS, CONFIANZA, COOPERACIÓN, RESISTENCIA) desde `estado_intento`.
+- Retroalimentación final integral: nota, consecuencias acumuladas, RDA, feedback docente e **IA (Ollama)**.
+- Caso oficial académico: *Caso juego social PSICOLOGIA SOCIAL* (5 escenas, 20 decisiones).
 
 Estructura principal:
 
@@ -144,6 +146,8 @@ PostgreSQL almacena el modelo académico completo. Las migraciones **Flyway** (`
 | V8 | Calificación 0–5 |
 | V9 | Gobierno académico, RDA y rol DOCENTE_ADMIN |
 | V10 | Inteligencia pedagógica y datos demo |
+| V11 | Corrección Mayor 1 — cursos, usuarios, recuperación de contraseña |
+| V12 | Corrección Mayor 2 — consecuencias clínicas, caso oficial, observación pedagógica |
 
 Entidades clave: `usuario`, `grupo`, `programacion`, `caso`, `resultado_aprendizaje`, `intento`, `respuesta`, `retroalimentacion`, `sintesis_ia`.
 
@@ -182,6 +186,9 @@ cp .env.example .env
 export DOCKER_HOST=unix:///var/run/docker.sock
 
 docker compose --profile full up -d --build
+
+# Descargar modelo IA (requerido para síntesis real)
+docker exec agora-ollama ollama pull llama3.1:8b
 ```
 
 Servicios disponibles:
@@ -191,7 +198,10 @@ Servicios disponibles:
 | API REST | http://localhost:8080 |
 | Swagger UI | http://localhost:8080/swagger-ui.html |
 | Health check | http://localhost:8080/actuator/health |
+| Ollama | http://localhost:11434 |
 | pgAdmin | http://localhost:5050 |
+
+> **IA (Ollama):** ver [`docs/OLLAMA_RUNBOOK.md`](docs/OLLAMA_RUNBOOK.md) para instalación, modelos y diagnóstico de fallback.
 
 ### 3. Levantar frontend
 
@@ -246,6 +256,9 @@ npm run build
 
 # Validación runtime de la plataforma
 node frontend/scripts/validate-phase13.mjs
+
+# Corrección Mayor 2 — consecuencias, radar, IA, caso oficial
+node frontend/scripts/validate-phase-cm2.mjs
 ```
 
 ---
@@ -284,16 +297,30 @@ El proyecto siguió un enfoque por fases con entregas verificables:
 
 Cada fase incluyó pruebas automatizadas, scripts de validación runtime y documentación de entrega.
 
+### Corrección Mayor 2 — Núcleo clínico e IA
+
+- **Consecuencias clínicas** por opción (`consecuencia` + `consecuencia_estado`) con impacto inmediato en simulación.
+- **Radar emocional pentagonal** desde `estado_intento` (ANSIEDAD, ESTRES, CONFIANZA, COOPERACION, RESISTENCIA).
+- **Análisis pedagógico estructurado** (`GET /api/v1/attempts/{id}/pedagogical-analysis`).
+- **Caso oficial** *Caso juego social PSICOLOGIA SOCIAL* (migración V12).
+- **IA con Ollama** + fallback visible. Ver [`docs/OLLAMA_RUNBOOK.md`](docs/OLLAMA_RUNBOOK.md).
+
+Validación runtime:
+
+```bash
+node frontend/scripts/validate-phase-cm2.mjs
+```
+
 ---
 
 ## Licencia y uso académico
 
-Proyecto desarrollado con fines **educativos** en el marco del programa de Ingeniería de Software de la Universidad Evangélica.  
+Proyecto desarrollado con fines **educativos** en el marco del programa de Ingeniería de Software de la CUE Alexander Von Humboldt.  
 Los datos de demostración incluidos en las migraciones son ficticios y están pensados exclusivamente para evaluación académica y presentación del sistema.
 
 ---
 
 <p align="center">
   <strong>Ágora</strong> — Formación clínica simulada con trazabilidad académica<br/>
-  <em>Universidad Evangélica · Ingeniería de Software · Tercer semestre</em>
+  <em>CUE Alexander Von Humboldt · Ingeniería de Software · Tercer semestre</em>
 </p>

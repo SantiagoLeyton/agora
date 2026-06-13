@@ -3,6 +3,7 @@ package com.agora.modules.ai.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import com.agora.infrastructure.audit.OperationalAuditService;
@@ -14,6 +15,9 @@ import com.agora.modules.ai.port.AIProviderResult;
 import com.agora.modules.ai.provider.MockAIProvider;
 import com.agora.modules.ai.provider.OllamaAIProvider;
 import com.agora.modules.ai.repository.SintesisIaRepository;
+import com.agora.modules.academic.domain.Grupo;
+import com.agora.modules.academic.domain.Programacion;
+import com.agora.modules.simulation.dto.AttemptConsequenceListResponse;
 import com.agora.modules.case_management.domain.Caso;
 import com.agora.modules.simulation.repository.BitacoraRepository;
 import com.agora.modules.simulation.domain.EstadoEmocional;
@@ -21,7 +25,10 @@ import com.agora.modules.simulation.domain.EstadoIntento;
 import com.agora.modules.simulation.domain.Intento;
 import com.agora.modules.simulation.repository.EstadoIntentoRepository;
 import com.agora.modules.simulation.repository.RespuestaRepository;
+import com.agora.modules.simulation.repository.RetroalimentacionRepository;
 import com.agora.modules.simulation.service.AttemptAccessService;
+import com.agora.modules.simulation.service.ConsequenceQueryService;
+import com.agora.modules.simulation.service.RdaEvaluationService;
 import com.agora.modules.user.domain.Rol;
 import com.agora.modules.user.domain.Usuario;
 import com.agora.security.UserPrincipal;
@@ -43,6 +50,9 @@ class AISummaryServiceTest {
     @Mock RespuestaRepository respuestaRepository;
     @Mock BitacoraRepository bitacoraRepository;
     @Mock AttemptAccessService accessService;
+    @Mock RdaEvaluationService rdaEvaluationService;
+    @Mock RetroalimentacionRepository retroalimentacionRepository;
+    @Mock ConsequenceQueryService consequenceQueryService;
     @Mock OllamaAIProvider ollamaAIProvider;
     @Mock MockAIProvider mockAIProvider;
     @Mock OperationalAuditService auditService;
@@ -57,7 +67,8 @@ class AISummaryServiceTest {
     @BeforeEach
     void setUp() {
         service = new AISummaryService(sintesisIaRepository, estadoIntentoRepository, respuestaRepository,
-                bitacoraRepository, accessService, ollamaAIProvider, mockAIProvider, auditService);
+                bitacoraRepository, accessService, rdaEvaluationService, retroalimentacionRepository,
+                consequenceQueryService, ollamaAIProvider, mockAIProvider, auditService);
         student = withId(new Usuario(new Rol("ESTUDIANTE", ""), "Estudiante", "Agora",
                 "estudiante@agora.com", "hash"), 1L);
         teacher = withId(new Usuario(new Rol("DOCENTE", ""), "Docente", "Agora",
@@ -67,8 +78,8 @@ class AISummaryServiceTest {
         teacherPrincipal = new UserPrincipal(2L, "Docente", "Agora", "docente@agora.com", "hash", "DOCENTE",
                 true);
         Caso caso = withId(new Caso("Caso IA", null, null, "BASICO", 30, null), 10L);
-        Grupo grupo = withId(new Grupo(teacher, "Grupo", null, "2026-1"), 20L);
-        Programacion programacion = withId(new Programacion(grupo, teacher, 10L, Instant.now(), Instant.now()), 30L);
+        Grupo grupo = withId(new Grupo(teacher, "Grupo", null, "2026-1", "TEST-1234"), 20L);
+        Programacion programacion = withId(new Programacion(grupo, teacher, 10L, null, Instant.now(), Instant.now()), 30L);
         intento = withId(new Intento(student, caso, programacion), 40L);
     }
 
@@ -82,6 +93,10 @@ class AISummaryServiceTest {
         when(respuestaRepository.findByIntentoIdOrderByFechaRespuestaAsc(40L)).thenReturn(List.of());
         when(estadoIntentoRepository.findByIntentoIdOrderByEstadoEmocionalNombreAsc(40L)).thenReturn(List.of(estado));
         when(bitacoraRepository.findByIntentoIdOrderByFechaRegistroAsc(40L)).thenReturn(List.of());
+        when(rdaEvaluationService.evaluarCaso(10L, 40L)).thenReturn(List.of());
+        when(retroalimentacionRepository.findByIntentoIdOrderByFechaGeneracionAsc(40L)).thenReturn(List.of());
+        when(consequenceQueryService.listarPorIntento(eq(40L), any(UserPrincipal.class)))
+                .thenReturn(new AttemptConsequenceListResponse(40L, List.of()));
         when(ollamaAIProvider.generateSummary(any())).thenReturn(new AIProviderResult("Sintesis ollama", "llama3.1:8b"));
         when(sintesisIaRepository.save(any(SintesisIa.class))).thenAnswer(invocation -> {
             SintesisIa sintesis = invocation.getArgument(0);
@@ -97,21 +112,22 @@ class AISummaryServiceTest {
     }
 
     @Test
-    void storesFailedOllamaAndFallbackWhenProviderFails() {
+    void usesMockFallbackWhenOllamaFails() {
         when(accessService.buscarIntento(40L)).thenReturn(intento);
         when(accessService.actor(studentPrincipal)).thenReturn(student);
         when(respuestaRepository.findByIntentoId(40L)).thenReturn(List.of());
         when(respuestaRepository.findByIntentoIdOrderByFechaRespuestaAsc(40L)).thenReturn(List.of());
         when(estadoIntentoRepository.findByIntentoIdOrderByEstadoEmocionalNombreAsc(40L)).thenReturn(List.of());
         when(bitacoraRepository.findByIntentoIdOrderByFechaRegistroAsc(40L)).thenReturn(List.of());
+        when(rdaEvaluationService.evaluarCaso(10L, 40L)).thenReturn(List.of());
+        when(retroalimentacionRepository.findByIntentoIdOrderByFechaGeneracionAsc(40L)).thenReturn(List.of());
+        when(consequenceQueryService.listarPorIntento(eq(40L), any(UserPrincipal.class)))
+                .thenReturn(new AttemptConsequenceListResponse(40L, List.of()));
         when(ollamaAIProvider.generateSummary(any())).thenThrow(new IllegalStateException("Proveedor caido"));
         when(mockAIProvider.generateSummary(any())).thenReturn(new AIProviderResult("Sintesis fallback", MockAIProvider.MODEL));
         when(sintesisIaRepository.save(any(SintesisIa.class))).thenAnswer(invocation -> {
             SintesisIa sintesis = invocation.getArgument(0);
-            if (sintesis.isFueExitosa()) {
-                return withId(sintesis, 81L);
-            }
-            return withId(sintesis, 80L);
+            return withId(sintesis, 81L);
         });
 
         var response = service.generar(40L, new AISummaryRequest(null), studentPrincipal, "127.0.0.1");
@@ -130,6 +146,10 @@ class AISummaryServiceTest {
         when(respuestaRepository.findByIntentoIdOrderByFechaRespuestaAsc(40L)).thenReturn(List.of());
         when(estadoIntentoRepository.findByIntentoIdOrderByEstadoEmocionalNombreAsc(40L)).thenReturn(List.of());
         when(bitacoraRepository.findByIntentoIdOrderByFechaRegistroAsc(40L)).thenReturn(List.of());
+        when(rdaEvaluationService.evaluarCaso(10L, 40L)).thenReturn(List.of());
+        when(retroalimentacionRepository.findByIntentoIdOrderByFechaGeneracionAsc(40L)).thenReturn(List.of());
+        when(consequenceQueryService.listarPorIntento(eq(40L), any(UserPrincipal.class)))
+                .thenReturn(new AttemptConsequenceListResponse(40L, List.of()));
         when(ollamaAIProvider.generateSummary(any())).thenThrow(new IllegalStateException("Ollama caido"));
         when(mockAIProvider.generateSummary(any())).thenThrow(new IllegalStateException("Mock caido"));
         when(sintesisIaRepository.save(any(SintesisIa.class))).thenAnswer(invocation -> {

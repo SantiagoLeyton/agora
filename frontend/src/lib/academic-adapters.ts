@@ -14,6 +14,7 @@ const PENDING_AVERAGE_PROGRESS_FALLBACK = 0;
 export function academicRoleToUserRole(role: UserResponse["rol"]): UserRole {
   switch (role) {
     case "DOCENTE":
+    case "DOCENTE_ADMIN":
       return "teacher";
     case "ADMINISTRADOR":
       return "admin";
@@ -51,10 +52,17 @@ export function mapGroupToUiGroup(
   return {
     id: String(group.id),
     name: group.nombre,
+    description: group.descripcion,
     studentsCount,
     activeCases,
     averageProgress: PENDING_AVERAGE_PROGRESS_FALLBACK,
     semester: group.periodo,
+    active: group.activo,
+    teacherId: group.docenteId,
+    accessKey: group.claveAcceso,
+    enrolled: group.inscrito,
+    docentesAsignados: group.docentesAsignados,
+    cupoDocentesDisponible: group.cupoDocentesDisponible,
   };
 }
 

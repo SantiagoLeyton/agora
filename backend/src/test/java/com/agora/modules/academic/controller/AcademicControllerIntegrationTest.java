@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.agora.modules.academic.repository.GrupoDocenteRepository;
 import com.agora.modules.academic.repository.GrupoEstudianteRepository;
 import com.agora.modules.academic.repository.GrupoRepository;
 import com.agora.modules.academic.repository.ProgramacionRepository;
@@ -46,6 +47,7 @@ class AcademicControllerIntegrationTest {
     @Autowired AuditoriaRepository auditoriaRepository;
     @Autowired GrupoRepository grupoRepository;
     @Autowired GrupoEstudianteRepository grupoEstudianteRepository;
+    @Autowired GrupoDocenteRepository grupoDocenteRepository;
     @Autowired ProgramacionRepository programacionRepository;
 
     private Usuario estudiante;
@@ -53,6 +55,7 @@ class AcademicControllerIntegrationTest {
     @BeforeEach
     void setUp() {
         programacionRepository.deleteAll();
+        grupoDocenteRepository.deleteAll();
         grupoEstudianteRepository.deleteAll();
         grupoRepository.deleteAll();
         auditoriaRepository.deleteAll();
@@ -138,7 +141,8 @@ class AcademicControllerIntegrationTest {
                         .header("Authorization", bearer(adminToken))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nombre\":\"Admin\",\"periodo\":\"2026-1\"}"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Debe asignar un docente al curso"));
 
         mockMvc.perform(post("/api/v1/groups")
                         .header("Authorization", bearer(studentToken))

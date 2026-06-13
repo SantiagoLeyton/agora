@@ -1,6 +1,8 @@
 package com.agora.modules.academic.controller;
 
 import com.agora.modules.academic.dto.AddGroupStudentRequest;
+import com.agora.modules.academic.dto.BatchGroupStudentsRequest;
+import com.agora.modules.academic.dto.BatchGroupStudentsResponse;
 import com.agora.modules.academic.dto.GroupStudentResponse;
 import com.agora.modules.academic.service.GroupService;
 import com.agora.security.SecurityExpressions;
@@ -36,7 +38,7 @@ public class GroupStudentController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize(SecurityExpressions.TEACHER_ACTIVITY)
+    @PreAuthorize(SecurityExpressions.TEACHER_OR_ADMIN)
     @Operation(summary = "Add a student to a group owned by the authenticated teacher")
     public GroupStudentResponse agregar(@PathVariable Long groupId, @Valid @RequestBody AddGroupStudentRequest request,
             @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
@@ -45,11 +47,31 @@ public class GroupStudentController {
 
     @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize(SecurityExpressions.TEACHER_ACTIVITY)
+    @PreAuthorize(SecurityExpressions.TEACHER_OR_ADMIN)
     @Operation(summary = "Remove a student from a group owned by the authenticated teacher")
     public void eliminar(@PathVariable Long groupId, @RequestParam Long estudianteId,
             @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
         groupService.eliminarEstudiante(groupId, estudianteId, principal, clientIp(servletRequest));
+    }
+
+    @PostMapping("/batch")
+    @ResponseStatus(HttpStatus.OK)
+    @PreAuthorize(SecurityExpressions.TEACHER_OR_ADMIN)
+    @Operation(summary = "Add multiple students to a group")
+    public BatchGroupStudentsResponse agregarBatch(@PathVariable Long groupId,
+            @Valid @RequestBody BatchGroupStudentsRequest request,
+            @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
+        return groupService.agregarEstudiantesBatch(groupId, request, principal, clientIp(servletRequest));
+    }
+
+    @PostMapping("/batch-remove")
+    @ResponseStatus(HttpStatus.OK)
+    @PreAuthorize(SecurityExpressions.TEACHER_OR_ADMIN)
+    @Operation(summary = "Remove multiple students from a group")
+    public BatchGroupStudentsResponse eliminarBatch(@PathVariable Long groupId,
+            @Valid @RequestBody BatchGroupStudentsRequest request,
+            @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
+        return groupService.eliminarEstudiantesBatch(groupId, request, principal, clientIp(servletRequest));
     }
 
     @GetMapping

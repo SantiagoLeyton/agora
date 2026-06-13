@@ -21,7 +21,9 @@ public class AttemptQueryService {
     public Page<AttemptResponse> listar(UserPrincipal principal, Pageable pageable) {
         return switch (principal.rol()) {
             case "ADMINISTRADOR" -> intentoRepository.findAll(pageable).map(AttemptResponse::from);
-            case "DOCENTE" -> intentoRepository.findByProgramacionDocenteId(principal.id(), pageable)
+            case "DOCENTE" -> intentoRepository.findVisibleForTeacher(principal.id(), pageable)
+                    .map(AttemptResponse::from);
+            case "DOCENTE_ADMIN" -> intentoRepository.findVisibleForTeacherAdmin(principal.id(), pageable)
                     .map(AttemptResponse::from);
             case "ESTUDIANTE" -> intentoRepository.findByEstudianteId(principal.id(), pageable)
                     .map(AttemptResponse::from);

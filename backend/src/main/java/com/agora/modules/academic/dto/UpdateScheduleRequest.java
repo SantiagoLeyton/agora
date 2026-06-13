@@ -12,5 +12,6 @@ public record UpdateScheduleRequest(
         @NotNull(message = "La fecha de fin es obligatoria")
         Instant fechaFin,
         @NotNull(message = "El estado activo es obligatorio")
-        Boolean activo) {
+        Boolean activo,
+        Long estudianteId) {
 }

@@ -15,10 +15,15 @@ const routeHero: Record<string, PageHeroMeta> = {
     title: "Espacio académico clínico",
     description: "Simulación psicosocial, análisis clínico y seguimiento de competencias terapéuticas.",
   },
+  "/courses": {
+    eyebrow: "Aprendizaje",
+    title: "Mis cursos",
+    description: "Cursos matriculados, simulaciones asignadas e historial académico.",
+  },
   "/dashboard/sessions": {
     eyebrow: "Programación académica",
     title: "Mis sesiones asignadas",
-    description: "Sesiones clínicas programadas por tu docente dentro de tus grupos académicos.",
+    description: "Sesiones clínicas programadas por tu docente dentro de tus cursos.",
   },
   "/simulator": {
     eyebrow: "Práctica clínica inmersiva",
@@ -50,10 +55,15 @@ const routeHero: Record<string, PageHeroMeta> = {
     title: clinicalCopy.students,
     description: "Progreso clínico, riesgo formativo y actividad reciente.",
   },
-  "/teacher/groups": {
-    eyebrow: "Organización",
-    title: "Cohortes clínicas",
-    description: "Grupos, semestres y métricas colectivas de simulación.",
+  "/teacher/courses": {
+    eyebrow: "Organización académica",
+    title: "Cursos",
+    description: "Gestiona estudiantes, simulaciones y programaciones por curso.",
+  },
+  "/admin/courses": {
+    eyebrow: "Gobierno académico",
+    title: "Cursos institucionales",
+    description: "Crea cursos, asigna docentes y administra matrículas.",
   },
   "/teacher/simulations": {
     eyebrow: "Calendario clínico",

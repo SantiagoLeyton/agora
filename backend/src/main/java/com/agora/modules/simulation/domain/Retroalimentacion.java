@@ -58,4 +58,9 @@ public class Retroalimentacion {
         this.escenasCompletadas = escenasCompletadas;
         this.observaciones = observaciones;
     }
+
+    public void actualizar(String contenido, String observaciones) {
+        this.contenido = contenido;
+        this.observaciones = observaciones;
+    }
 }

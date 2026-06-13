@@ -10,6 +10,8 @@ import com.agora.modules.academic.domain.Grupo;
 import com.agora.modules.academic.domain.Programacion;
 import com.agora.modules.academic.dto.CreateScheduleRequest;
 import com.agora.modules.academic.dto.ScheduleResponse;
+import com.agora.modules.academic.repository.GrupoDocenteRepository;
+import com.agora.modules.academic.repository.GrupoEstudianteRepository;
 import com.agora.modules.academic.repository.GrupoRepository;
 import com.agora.modules.academic.repository.ProgramacionRepository;
 import com.agora.modules.user.domain.Rol;
@@ -30,6 +32,8 @@ class ScheduleServiceTest {
 
     @Mock ProgramacionRepository programacionRepository;
     @Mock GrupoRepository grupoRepository;
+    @Mock GrupoEstudianteRepository grupoEstudianteRepository;
+    @Mock GrupoDocenteRepository grupoDocenteRepository;
     @Mock UsuarioRepository usuarioRepository;
     @Mock OperationalAuditService auditService;
 
@@ -38,15 +42,21 @@ class ScheduleServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ScheduleService(programacionRepository, grupoRepository, usuarioRepository,
-                new AcademicAccessService(), auditService);
+        service = new ScheduleService(
+                programacionRepository,
+                grupoRepository,
+                grupoEstudianteRepository,
+                grupoDocenteRepository,
+                usuarioRepository,
+                new AcademicAccessService(grupoDocenteRepository),
+                auditService);
         docente = new Usuario(new Rol("DOCENTE", ""), "Docente", "Agora", "docente@agora.com", "hash");
         ReflectionTestUtils.setField(docente, "id", 1L);
     }
 
     @Test
     void createsValidScheduleForOwnedGroup() {
-        Grupo grupo = new Grupo(docente, "Grupo A", "Base", "2026-1");
+        Grupo grupo = new Grupo(docente, "Grupo A", "Base", "2026-1", "GRUPO-1234");
         ReflectionTestUtils.setField(grupo, "id", 10L);
         Instant inicio = Instant.parse("2026-06-05T10:00:00Z");
         Instant fin = Instant.parse("2026-06-05T12:00:00Z");
@@ -58,7 +68,7 @@ class ScheduleServiceTest {
             return programacion;
         });
 
-        ScheduleResponse response = service.crear(new CreateScheduleRequest(10L, null, inicio, fin),
+        ScheduleResponse response = service.crear(new CreateScheduleRequest(10L, null, inicio, fin, null),
                 new UserPrincipal(1L, "Docente", "Agora", "docente@agora.com", "hash", "DOCENTE", true),
                 "127.0.0.1");
 

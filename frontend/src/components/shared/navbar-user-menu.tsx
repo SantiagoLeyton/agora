@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store";
 import { getRoleHomePath, getRoleLabel } from "@/lib/auth";
+import { resetUserScopedClientState } from "@/lib/user-session-cleanup";
 import { cn } from "@/lib/utils";
 
 export function NavbarUserMenu({ className }: { className?: string }) {
@@ -83,7 +84,7 @@ export function NavbarUserMenu({ className }: { className?: string }) {
           className="text-destructive focus:text-destructive"
           onClick={async () => {
             await logout();
-            queryClient.clear();
+            resetUserScopedClientState(queryClient);
             router.push("/login");
           }}
         >

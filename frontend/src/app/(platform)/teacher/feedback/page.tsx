@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { HeroSection, PageLoading, Surface } from "@/components/design-system";
-import { useCreateFeedback, useTeacherFeedbackQueue } from "@/hooks/use-data";
+import { useCreateFeedback, useTeacherFeedbackQueue, useUpdateFeedback } from "@/hooks/use-data";
 import { getPageHeroMeta } from "@/lib/page-meta";
 import type { TeacherFeedbackItem } from "@/lib/teacher-feedback-adapters";
 import { ApiError } from "@/services/api-error";
@@ -21,8 +21,10 @@ export default function TeacherFeedbackPage() {
   const meta = getPageHeroMeta("/teacher/feedback");
   const { data: feedbackItems, isLoading, isError, error } = useTeacherFeedbackQueue();
   const createFeedback = useCreateFeedback();
+  const updateFeedback = useUpdateFeedback();
 
   const [selectedItem, setSelectedItem] = useState<TeacherFeedbackItem | null>(null);
+  const [editingFeedbackId, setEditingFeedbackId] = useState<number | null>(null);
   const [contenido, setContenido] = useState("");
   const [observaciones, setObservaciones] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
@@ -30,14 +32,24 @@ export default function TeacherFeedbackPage() {
 
   const openRespondForm = (item: TeacherFeedbackItem) => {
     setSelectedItem(item);
+    setEditingFeedbackId(null);
     setContenido("");
     setObservaciones("");
     setFormError(null);
   };
 
+  const openEditForm = (item: TeacherFeedbackItem) => {
+    setSelectedItem(item);
+    setEditingFeedbackId(item.teacherFeedback?.id ?? null);
+    setContenido(item.teacherFeedback?.contenido ?? "");
+    setObservaciones(item.teacherFeedback?.observaciones ?? "");
+    setFormError(null);
+  };
+
   const closeRespondForm = () => {
-    if (createFeedback.isPending) return;
+    if (createFeedback.isPending || updateFeedback.isPending) return;
     setSelectedItem(null);
+    setEditingFeedbackId(null);
     setContenido("");
     setObservaciones("");
     setFormError(null);
@@ -53,37 +65,57 @@ export default function TeacherFeedbackPage() {
     }
 
     setFormError(null);
+    const request = {
+      contenido: trimmedContent,
+      observaciones: observaciones.trim() || null,
+    };
+    const mutationOptions = {
+      onSuccess: () => {
+        const studentName = selectedItem.studentName;
+        setSelectedItem(null);
+        setEditingFeedbackId(null);
+        setContenido("");
+        setObservaciones("");
+        setFormError(null);
+        setSuccessMessage(
+          editingFeedbackId
+            ? `Retroalimentación actualizada para ${studentName}.`
+            : `Retroalimentación enviada para ${studentName}.`
+        );
+      },
+      onError: (mutationError: unknown) => {
+        if (mutationError instanceof ApiError) {
+          if (mutationError.status === 403) {
+            setFormError(
+              "No tienes permiso para retroalimentar este intento. Verifica que la simulación esté vinculada a tu programación."
+            );
+            return;
+          }
+          setFormError(mutationError.message);
+          return;
+        }
+        setFormError("No se pudo enviar la retroalimentación. Intenta de nuevo.");
+      },
+    };
+
+    if (editingFeedbackId) {
+      updateFeedback.mutate(
+        {
+          attemptId: selectedItem.attemptId,
+          feedbackId: editingFeedbackId,
+          request,
+        },
+        mutationOptions
+      );
+      return;
+    }
+
     createFeedback.mutate(
       {
         attemptId: selectedItem.attemptId,
-        request: {
-          contenido: trimmedContent,
-          observaciones: observaciones.trim() || null,
-        },
+        request,
       },
-      {
-        onSuccess: () => {
-          const studentName = selectedItem.studentName;
-          setSelectedItem(null);
-          setContenido("");
-          setObservaciones("");
-          setFormError(null);
-          setSuccessMessage(`Retroalimentación enviada para ${studentName}.`);
-        },
-        onError: (mutationError) => {
-          if (mutationError instanceof ApiError) {
-            if (mutationError.status === 403) {
-              setFormError(
-                "No tienes permiso para retroalimentar este intento. Verifica que la simulación esté vinculada a tu programación."
-              );
-              return;
-            }
-            setFormError(mutationError.message);
-            return;
-          }
-          setFormError("No se pudo enviar la retroalimentación. Intenta de nuevo.");
-        },
-      }
+      mutationOptions
     );
   };
 
@@ -140,7 +172,7 @@ export default function TeacherFeedbackPage() {
                   <Badge variant={item.status === "pendiente" ? "warning" : "success"}>
                     {item.status === "pendiente" ? "Pendiente" : "Revisado"}
                   </Badge>
-                  {item.status === "pendiente" && (
+                  {item.status === "pendiente" ? (
                     <Button
                       size="sm"
                       variant="outline"
@@ -148,6 +180,15 @@ export default function TeacherFeedbackPage() {
                     >
                       <MessageSquare className="h-3.5 w-3.5" />
                       Responder
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openEditForm(item)}
+                    >
+                      <MessageSquare className="h-3.5 w-3.5" />
+                      Editar
                     </Button>
                   )}
                 </div>
@@ -172,7 +213,7 @@ export default function TeacherFeedbackPage() {
           >
             <div>
               <h2 id="feedback-dialog-title" className="font-display text-lg font-semibold">
-                Responder retroalimentación
+                {editingFeedbackId ? "Editar retroalimentación" : "Responder retroalimentación"}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 {selectedItem.studentName} · {selectedItem.caseTitle}
@@ -211,7 +252,7 @@ export default function TeacherFeedbackPage() {
                 type="button"
                 variant="outline"
                 onClick={closeRespondForm}
-                disabled={createFeedback.isPending}
+                disabled={createFeedback.isPending || updateFeedback.isPending}
               >
                 Cancelar
               </Button>
@@ -219,9 +260,13 @@ export default function TeacherFeedbackPage() {
                 type="button"
                 variant="brand"
                 onClick={handleSubmitFeedback}
-                disabled={createFeedback.isPending}
+                disabled={createFeedback.isPending || updateFeedback.isPending}
               >
-                {createFeedback.isPending ? "Enviando…" : "Enviar retroalimentación"}
+                {createFeedback.isPending || updateFeedback.isPending
+                  ? "Enviando…"
+                  : editingFeedbackId
+                    ? "Guardar cambios"
+                    : "Enviar retroalimentación"}
               </Button>
             </div>
           </Surface>

@@ -48,6 +48,9 @@ export interface SimulationCase {
   createdAt?: string;
   updatedAt?: string;
   isActive?: boolean;
+  presentable?: boolean;
+  programacionActivaId?: number | null;
+  mensajePresentacion?: string | null;
 }
 
 export interface DialogueOption {
@@ -72,6 +75,8 @@ export interface Scene {
 
 export interface SimulationSession {
   attemptId?: number;
+  ownerUserId?: string;
+  programacionId?: number;
   status?: "EN_PROCESO" | "FINALIZADO" | "ABANDONADO";
   states?: import("@/types/simulation").SimulationStateResponse[];
   caseId: string;
@@ -122,10 +127,17 @@ export interface Student {
 export interface Group {
   id: string;
   name: string;
+  description?: string | null;
   studentsCount: number;
   activeCases: number;
   averageProgress: number;
   semester: string;
+  active: boolean;
+  teacherId?: number;
+  accessKey?: string | null;
+  enrolled?: boolean;
+  docentesAsignados?: number;
+  cupoDocentesDisponible?: number;
 }
 
 export interface Assignment {

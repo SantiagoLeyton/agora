@@ -67,7 +67,7 @@ export default function AdminDashboardPage() {
       <SectionHeader title="Gestión del ecosistema" />
       <ActionTileGrid>
         <ActionTile href="/admin/users" icon={UserCog} title="Usuarios" description="Cuentas y permisos" index={0} />
-        <ActionTile href="/admin/settings" icon={Settings} title="Configuración" description="Parámetros académicos" index={1} />
+        <ActionTile href="/admin/settings" icon={Settings} title="Permisos" description="Matriz de referencia" index={1} />
         <ActionTile href="/teacher" icon={GraduationCap} title="Panel docente" description="Gestión académica" index={2} />
         <ActionTile href="/simulator" icon={Shield} title="Simulador" description="Vista de casos" index={3} />
       </ActionTileGrid>
@@ -84,7 +84,7 @@ export default function AdminDashboardPage() {
           </p>
         </div>
         <Button asChild variant="outline">
-          <Link href="/admin/settings">Configurar plataforma</Link>
+          <Link href="/admin/settings">Ver matriz de permisos</Link>
         </Button>
       </Surface>
     </div>

@@ -16,6 +16,27 @@ public interface IntentoRepository extends JpaRepository<Intento, Long> {
 
     @Query("""
             SELECT i FROM Intento i
+            WHERE i.programacion IS NOT NULL
+            AND (
+                i.programacion.docente.id = :docenteId
+                OR i.programacion.grupo.docente.id = :docenteId
+            )
+            """)
+    Page<Intento> findVisibleForTeacher(@Param("docenteId") Long docenteId, Pageable pageable);
+
+    @Query("""
+            SELECT i FROM Intento i
+            WHERE i.programacion IS NOT NULL
+            AND (
+                i.programacion.docente.id = :docenteId
+                OR i.programacion.grupo.docente.id = :docenteId
+                OR i.caso.creador.id = :docenteId
+            )
+            """)
+    Page<Intento> findVisibleForTeacherAdmin(@Param("docenteId") Long docenteId, Pageable pageable);
+
+    @Query("""
+            SELECT i FROM Intento i
             JOIN FETCH i.programacion p
             JOIN FETCH p.grupo g
             JOIN FETCH i.caso c

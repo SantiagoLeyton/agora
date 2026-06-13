@@ -3,10 +3,14 @@ package com.agora.modules.auth.controller;
 import com.agora.modules.auth.dto.AuthenticatedUserResponse;
 import com.agora.modules.auth.dto.LoginRequest;
 import com.agora.modules.auth.dto.LoginResponse;
+import com.agora.modules.auth.dto.ForgotPasswordRequest;
+import com.agora.modules.auth.dto.ForgotPasswordResponse;
 import com.agora.modules.auth.dto.LogoutRequest;
 import com.agora.modules.auth.dto.RefreshTokenRequest;
 import com.agora.modules.auth.dto.RefreshTokenResponse;
+import com.agora.modules.auth.dto.ResetPasswordRequest;
 import com.agora.modules.auth.service.AuthService;
+import com.agora.modules.auth.service.PasswordResetService;
 import com.agora.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final PasswordResetService passwordResetService;
 
     @PostMapping("/login")
     @Operation(summary = "Authenticate with email and password")
@@ -54,6 +59,20 @@ public class AuthController {
     @Operation(summary = "Return the authenticated user")
     public AuthenticatedUserResponse me(@AuthenticationPrincipal UserPrincipal principal) {
         return authService.me(principal);
+    }
+
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Request a password reset link")
+    public ForgotPasswordResponse forgotPassword(@Valid @RequestBody ForgotPasswordRequest request,
+            HttpServletRequest servletRequest) {
+        return passwordResetService.solicitar(request.correo(), clientIp(servletRequest));
+    }
+
+    @PostMapping("/reset-password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Reset password using a valid token")
+    public void resetPassword(@Valid @RequestBody ResetPasswordRequest request, HttpServletRequest servletRequest) {
+        passwordResetService.restablecer(request, clientIp(servletRequest));
     }
 
     private String clientIp(HttpServletRequest request) {

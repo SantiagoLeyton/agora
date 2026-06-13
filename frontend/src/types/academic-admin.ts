@@ -53,10 +53,15 @@ export interface GroupResponse {
   id: number;
   docenteId: number;
   docenteCorreo: string;
+  docenteIds: number[];
+  docentesAsignados: number;
+  cupoDocentesDisponible: number;
   nombre: string;
   descripcion: string | null;
   periodo: string;
+  claveAcceso: string | null;
   activo: boolean;
+  inscrito: boolean;
   fechaCreacion: string;
   fechaActualizacion: string;
 }
@@ -65,12 +70,16 @@ export interface CreateGroupRequest {
   nombre: string;
   descripcion?: string | null;
   periodo: string;
+  claveAcceso?: string | null;
+  docenteId?: number | null;
 }
 
 export interface UpdateGroupRequest {
   nombre: string;
   descripcion?: string | null;
   periodo: string;
+  claveAcceso?: string | null;
+  docenteId?: number | null;
 }
 
 export interface GroupFilters extends PageRequest {
@@ -78,6 +87,39 @@ export interface GroupFilters extends PageRequest {
   periodo?: string;
   activo?: boolean;
   search?: string;
+  scope?: "mis" | "explorar";
+}
+
+export interface JoinGroupRequest {
+  claveAcceso: string;
+}
+
+export interface BatchGroupStudentsRequest {
+  estudianteIds: number[];
+}
+
+export interface BatchGroupStudentFailure {
+  estudianteId: number;
+  motivo: string;
+}
+
+export interface BatchGroupStudentsResponse {
+  agregados: GroupStudentResponse[];
+  removidos: number[];
+  fallidos: BatchGroupStudentFailure[];
+}
+
+export interface GroupTeacherResponse {
+  id: number;
+  nombre: string;
+  apellido: string;
+  correo: string;
+  titular: boolean;
+  fechaAsignacion: string;
+}
+
+export interface AddGroupTeacherRequest {
+  docenteId: number;
 }
 
 export interface GroupStudentResponse {
@@ -99,6 +141,8 @@ export interface ScheduleResponse {
   docenteId: number;
   docenteCorreo: string;
   casoId: number | null;
+  estudianteId: number | null;
+  estudianteNombre: string | null;
   fechaInicio: string;
   fechaFin: string;
   activo: boolean;
@@ -108,6 +152,7 @@ export interface ScheduleResponse {
 export interface CreateScheduleRequest {
   grupoId: number;
   casoId?: number | null;
+  estudianteId?: number | null;
   fechaInicio: string;
   fechaFin: string;
 }
@@ -115,6 +160,7 @@ export interface CreateScheduleRequest {
 export interface UpdateScheduleRequest {
   grupoId: number;
   casoId?: number | null;
+  estudianteId?: number | null;
   fechaInicio: string;
   fechaFin: string;
   activo: boolean;

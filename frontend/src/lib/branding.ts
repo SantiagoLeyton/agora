@@ -5,6 +5,6 @@ export const BRAND = {
   backgroundSession: "/assets/fondosesion.png",
   /** Consultorio ilustrado — escena bilateral con personajes Live2D */
   consultationScene: "/assets/consultorio-sesion.png",
-  institutionName: "Universidad Evangélica",
+  institutionName: "CUE Alexander Von Humboldt",
   platformName: "Simulador Psicosocial",
 } as const;

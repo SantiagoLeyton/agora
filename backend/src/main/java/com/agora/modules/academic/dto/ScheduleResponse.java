@@ -10,15 +10,23 @@ public record ScheduleResponse(
         Long docenteId,
         String docenteCorreo,
         Long casoId,
+        Long estudianteId,
+        String estudianteNombre,
         Instant fechaInicio,
         Instant fechaFin,
         boolean activo,
         Instant fechaCreacion) {
 
     public static ScheduleResponse from(Programacion programacion) {
+        var estudiante = programacion.getEstudiante();
+        String estudianteNombre = estudiante == null
+                ? null
+                : ("%s %s".formatted(estudiante.getNombre(), estudiante.getApellido())).trim();
         return new ScheduleResponse(programacion.getId(), programacion.getGrupo().getId(),
                 programacion.getGrupo().getNombre(), programacion.getDocente().getId(),
-                programacion.getDocente().getCorreo(), programacion.getCasoId(), programacion.getFechaInicio(),
-                programacion.getFechaFin(), programacion.isActivo(), programacion.getFechaCreacion());
+                programacion.getDocente().getCorreo(), programacion.getCasoId(),
+                estudiante == null ? null : estudiante.getId(), estudianteNombre,
+                programacion.getFechaInicio(), programacion.getFechaFin(), programacion.isActivo(),
+                programacion.getFechaCreacion());
     }
 }

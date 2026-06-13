@@ -1,12 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { HeroSection, DataTable } from "@/components/design-system";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ClinicalAvatar } from "@/components/design-system";
+import { UserFormDialog } from "@/modules/admin/components/user-form-dialog";
 import { getPageHeroMeta } from "@/lib/page-meta";
 import { fullName } from "@/lib/academic-adapters";
 import { useRoles, useUsers } from "@/hooks/use-data";
+import type { UserResponse } from "@/types/academic-admin";
 
 const roleLabels = {
   ESTUDIANTE: "Estudiante",
@@ -20,6 +23,9 @@ export default function AdminUsersPage() {
   const { data: usersPage } = useUsers({ size: 100 });
   const { data: roles = [] } = useRoles();
   const users = usersPage?.content ?? [];
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
+
   const getRoleLabel = (role: string) => {
     if (role in roleLabels) {
       return roleLabels[role as keyof typeof roleLabels];
@@ -28,13 +34,27 @@ export default function AdminUsersPage() {
     return backendRole?.nombre ?? role;
   };
 
+  const openCreate = () => {
+    setSelectedUser(null);
+    setDialogOpen(true);
+  };
+
+  const openEdit = (user: UserResponse) => {
+    setSelectedUser(user);
+    setDialogOpen(true);
+  };
+
   return (
     <div className="space-y-8">
       <HeroSection
         eyebrow={meta.eyebrow}
         title={meta.title}
         description={meta.description}
-        action={<Button>Nuevo usuario</Button>}
+        action={
+          <Button variant="brand" onClick={openCreate}>
+            Nuevo usuario
+          </Button>
+        }
       />
 
       <DataTable
@@ -78,13 +98,19 @@ export default function AdminUsersPage() {
             key: "actions",
             header: "Acciones",
             className: "text-right",
-            cell: () => (
-              <Button variant="ghost" size="sm">
+            cell: (user) => (
+              <Button variant="ghost" size="sm" onClick={() => openEdit(user)}>
                 Editar
               </Button>
             ),
           },
         ]}
+      />
+
+      <UserFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        user={selectedUser}
       />
     </div>
   );

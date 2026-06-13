@@ -18,6 +18,8 @@ import { FeedbackComparisonPanel } from "@/modules/evaluation/components/feedbac
 import { RdaEvaluationPanel } from "@/modules/evaluation/components/rda-evaluation-panel";
 import { useEvaluation, useGenerateAISummary } from "@/hooks/use-data";
 import { extractFeedbackComparison, formatAcademicGrade } from "@/lib/evaluation-adapters";
+import { resolveAiProviderLabel } from "@/lib/ai-provider";
+import { usePedagogicalAnalysis } from "@/hooks/use-data";
 import { ApiError } from "@/services/api-error";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -32,6 +34,7 @@ export default function EvaluationResultPage({ params }: EvaluationResultPagePro
   const { data: result, isLoading } = useEvaluation(id);
   const attemptId = Number(id);
   const generateAISummary = useGenerateAISummary(attemptId, id);
+  const { data: pedagogicalAnalysis } = usePedagogicalAnalysis(attemptId);
   const [aiNotice, setAiNotice] = useState<string | null>(null);
 
   const handleGenerateAISummary = () => {
@@ -42,13 +45,14 @@ export default function EvaluationResultPage({ params }: EvaluationResultPagePro
         onSuccess: (summary) => {
           if (!summary.fueExitosa) {
             setAiNotice(
-              summary.mensajeError
-                ? `Se generó una respuesta alternativa porque el proveedor IA no respondió correctamente: ${summary.mensajeError}`
-                : "Se generó una respuesta alternativa porque el proveedor IA no respondió correctamente."
+              `${resolveAiProviderLabel(summary)}: ${
+                summary.mensajeError ??
+                "Se generó una respuesta alternativa porque el proveedor IA no respondió correctamente."
+              }`
             );
             return;
           }
-          setAiNotice("Resumen IA generado correctamente.");
+          setAiNotice(`${resolveAiProviderLabel(summary)} — resumen generado correctamente.`);
         },
         onError: (error) => {
           setAiNotice(
@@ -127,6 +131,34 @@ export default function EvaluationResultPage({ params }: EvaluationResultPagePro
       <MetricsOverview metrics={result.metrics} />
 
       <RdaEvaluationPanel items={result.rdaEvaluation ?? []} />
+
+      {pedagogicalAnalysis && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Surface>
+            <SectionHeader title="Retroalimentación clínica" description="Análisis estructurado del intento" />
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+              {pedagogicalAnalysis.retroalimentacionClinica}
+            </p>
+          </Surface>
+          <Surface>
+            <SectionHeader title="Retroalimentación pedagógica" description="Observaciones formativas y RDA" />
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+              {pedagogicalAnalysis.retroalimentacionPedagogica}
+            </p>
+          </Surface>
+        </div>
+      )}
+
+      {pedagogicalAnalysis?.recomendaciones?.length ? (
+        <Surface>
+          <SectionHeader title="Recomendaciones de mejora" />
+          <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+            {pedagogicalAnalysis.recomendaciones.map((item) => (
+              <li key={item}>• {item}</li>
+            ))}
+          </ul>
+        </Surface>
+      ) : null}
 
       {result.summary && (
         <FeedbackComparisonPanel

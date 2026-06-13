@@ -32,7 +32,9 @@ class OllamaAIProviderTest {
     void generatesSummaryFromOllamaResponse() {
         server.expect(requestTo("http://ollama.test/api/generate"))
                 .andExpect(method(HttpMethod.POST))
-                .andExpect(content().json("{\"model\":\"llama3.1:8b\",\"prompt\":\"prompt\",\"stream\":false}"))
+                .andExpect(content().json(
+                        "{\"model\":\"llama3.1:8b\",\"prompt\":\"prompt\",\"stream\":false,"
+                                + "\"options\":{\"num_predict\":400,\"temperature\":0.3}}"))
                 .andRespond(withSuccess("{\"model\":\"llama3.1:8b\",\"response\":\"Sintesis local\",\"done\":true}",
                         MediaType.APPLICATION_JSON));
         OllamaAIProvider provider = provider();

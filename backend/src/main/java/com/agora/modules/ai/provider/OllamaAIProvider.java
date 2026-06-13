@@ -42,7 +42,8 @@ public class OllamaAIProvider implements AIProvider {
             OllamaGenerateResponse response = restClient.post()
                     .uri("/api/generate")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(new OllamaGenerateRequest(properties.model(), request.prompt(), false))
+                    .body(new OllamaGenerateRequest(properties.model(), request.prompt(), false,
+                            new OllamaOptions(400, 0.3)))
                     .retrieve()
                     .body(OllamaGenerateResponse.class);
             String generated = response == null ? null : response.response();
@@ -78,7 +79,13 @@ public class OllamaAIProvider implements AIProvider {
     private record OllamaGenerateRequest(
             String model,
             String prompt,
-            boolean stream) {
+            boolean stream,
+            OllamaOptions options) {
+    }
+
+    private record OllamaOptions(
+            Integer num_predict,
+            Double temperature) {
     }
 
     private record OllamaGenerateResponse(

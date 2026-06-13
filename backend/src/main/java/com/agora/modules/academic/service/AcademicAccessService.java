@@ -2,17 +2,22 @@ package com.agora.modules.academic.service;
 
 import com.agora.modules.academic.domain.Grupo;
 import com.agora.modules.academic.domain.Programacion;
+import com.agora.modules.academic.repository.GrupoDocenteRepository;
 import com.agora.security.UserPrincipal;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 class AcademicAccessService {
 
     static final String ADMIN = "ADMINISTRADOR";
     static final String TEACHER = "DOCENTE";
     static final String TEACHER_ADMIN = "DOCENTE_ADMIN";
     static final String STUDENT = "ESTUDIANTE";
+
+    private final GrupoDocenteRepository grupoDocenteRepository;
 
     boolean isAdmin(UserPrincipal principal) {
         return ADMIN.equals(principal.rol());
@@ -27,11 +32,19 @@ class AcademicAccessService {
     }
 
     boolean owns(Grupo grupo, UserPrincipal principal) {
-        return grupo.getDocente().getId().equals(principal.id());
+        return isTeacherAssigned(grupo, principal.id());
     }
 
     boolean owns(Programacion programacion, UserPrincipal principal) {
-        return programacion.getDocente().getId().equals(principal.id());
+        return isTeacherAssigned(programacion.getGrupo(), principal.id())
+                || programacion.getDocente().getId().equals(principal.id());
+    }
+
+    boolean isTeacherAssigned(Grupo grupo, Long docenteId) {
+        if (grupo.getDocente().getId().equals(docenteId)) {
+            return true;
+        }
+        return grupoDocenteRepository.existsByGrupoIdAndDocenteId(grupo.getId(), docenteId);
     }
 
     boolean isMember(Grupo grupo, UserPrincipal principal) {
@@ -40,12 +53,22 @@ class AcademicAccessService {
     }
 
     void requireTeacherOwner(Grupo grupo, UserPrincipal principal) {
+        if (isAdmin(principal)) {
+            return;
+        }
         if (!isTeacher(principal) || !owns(grupo, principal)) {
             throw new AccessDeniedException("No puede modificar grupos de otros docentes");
         }
     }
 
+    void requireGroupManager(Grupo grupo, UserPrincipal principal) {
+        requireTeacherOwner(grupo, principal);
+    }
+
     void requireTeacherOwner(Programacion programacion, UserPrincipal principal) {
+        if (isAdmin(principal)) {
+            return;
+        }
         if (!isTeacher(principal) || !owns(programacion, principal)) {
             throw new AccessDeniedException("No puede modificar programaciones de otros docentes");
         }
@@ -63,5 +86,9 @@ class AcademicAccessService {
             return;
         }
         throw new AccessDeniedException("No puede consultar esta programacion");
+    }
+
+    boolean canExposeAccessKey(UserPrincipal principal) {
+        return isAdmin(principal) || isTeacher(principal);
     }
 }

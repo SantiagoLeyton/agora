@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doAnswer;
 
 import com.agora.infrastructure.audit.OperationalAuditService;
 import com.agora.modules.academic.repository.GrupoEstudianteRepository;
@@ -22,6 +23,7 @@ import com.agora.modules.simulation.domain.EstadoEmocional;
 import com.agora.modules.simulation.domain.EstadoIntento;
 import com.agora.modules.simulation.domain.Intento;
 import com.agora.modules.simulation.domain.Respuesta;
+import com.agora.modules.simulation.dto.ConsequenceImpactResponse;
 import com.agora.modules.simulation.dto.AnswerSimulationRequest;
 import com.agora.modules.simulation.dto.StartSimulationRequest;
 import com.agora.modules.simulation.repository.ConsecuenciaEstadoRepository;
@@ -62,6 +64,7 @@ class SimulationServiceTest {
     @Mock OperationalAuditService auditService;
     @Mock AttemptFeedbackService feedbackService;
     @Mock AttemptGradingService attemptGradingService;
+    @Mock ConsequenceQueryService consequenceQueryService;
 
     private SimulationService service;
     private Usuario student;
@@ -72,7 +75,8 @@ class SimulationServiceTest {
         service = new SimulationService(intentoRepository, respuestaRepository, estadoEmocionalRepository,
                 estadoIntentoRepository, consecuenciaRepository, consecuenciaEstadoRepository, casoRepository,
                 escenaRepository, preguntaRepository, opcionRepository, programacionRepository,
-                grupoEstudianteRepository, usuarioRepository, auditService, feedbackService, attemptGradingService);
+                grupoEstudianteRepository, usuarioRepository, auditService, feedbackService, attemptGradingService,
+                consequenceQueryService);
         student = withId(new Usuario(new Rol("ESTUDIANTE", ""), "Estudiante", "Agora",
                 "estudiante@agora.com", "hash"), 1L);
         principal = new UserPrincipal(1L, "Estudiante", "Agora", "estudiante@agora.com", "hash", "ESTUDIANTE",
@@ -112,8 +116,12 @@ class SimulationServiceTest {
         when(respuestaRepository.existsByIntentoIdAndPreguntaId(20L, 12L)).thenReturn(false);
         when(respuestaRepository.save(any(Respuesta.class))).thenReturn(respuesta);
         when(consecuenciaRepository.findByOpcionId(13L)).thenReturn(Optional.of(consecuencia));
-        when(consecuenciaEstadoRepository.findByConsecuenciaId(300L)).thenReturn(List.of(variacion));
-        when(estadoIntentoRepository.findByIntentoIdAndEstadoEmocionalId(20L, 100L)).thenReturn(Optional.of(estado));
+        doAnswer(invocation -> {
+            estado.aplicarVariacion(10);
+            when(estadoIntentoRepository.findByIntentoIdOrderByEstadoEmocionalNombreAsc(20L))
+                    .thenReturn(List.of(estado));
+            return List.of(new ConsequenceImpactResponse("CONFIANZA", 10, 50, 60));
+        }).when(consequenceQueryService).aplicarYConstruirImpactos(intento, consecuencia);
         when(estadoIntentoRepository.findByIntentoIdOrderByEstadoEmocionalNombreAsc(20L)).thenReturn(List.of(estado));
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(student));
 

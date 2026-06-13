@@ -15,7 +15,9 @@ import {
 } from "@/components/design-system";
 import { Badge } from "@/components/ui/badge";
 import { ClinicalAvatar } from "@/components/design-system";
+import { useAuthStore } from "@/store";
 import { useStudents, useAssignments, useCases, useTeacherMetrics } from "@/hooks/use-data";
+import { canManageClinicalCases } from "@/lib/case-permissions";
 import { getPageHeroMeta } from "@/lib/page-meta";
 import { mapTeacherMetricsToOverviewStats } from "@/lib/teacher-metrics-adapters";
 import { mapTeacherMetricsToDashboardHero } from "@/lib/dashboard-adapters";
@@ -31,6 +33,8 @@ const teacherMetricIcons = {
 };
 
 export default function TeacherDashboardPage() {
+  const backendRole = useAuthStore((state) => state.user?.backendRole);
+  const canManageCases = canManageClinicalCases(backendRole);
   const { data: students, isLoading } = useStudents();
   const { data: assignments } = useAssignments();
   const { data: cases } = useCases();
@@ -51,12 +55,14 @@ export default function TeacherDashboardPage() {
         tags={["Gestión académica", "Seguimiento clínico"]}
         stats={mapTeacherMetricsToDashboardHero(metrics)}
         action={
-          <Button asChild variant="brand" size="lg">
-            <Link href="/teacher/cases">
-              <Plus className="h-4 w-4" />
-              Nuevo caso clínico
-            </Link>
-          </Button>
+          canManageCases ? (
+            <Button asChild variant="brand" size="lg">
+              <Link href="/teacher/cases/new">
+                <Plus className="h-4 w-4" />
+                Nuevo caso clínico
+              </Link>
+            </Button>
+          ) : undefined
         }
       />
 

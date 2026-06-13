@@ -36,6 +36,10 @@ public class Programacion {
     @Column(name = "caso_id")
     private Long casoId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "estudiante_id")
+    private Usuario estudiante;
+
     @Column(name = "fecha_inicio", nullable = false)
     private Instant fechaInicio;
 
@@ -48,17 +52,21 @@ public class Programacion {
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
     private Instant fechaCreacion = Instant.now();
 
-    public Programacion(Grupo grupo, Usuario docente, Long casoId, Instant fechaInicio, Instant fechaFin) {
+    public Programacion(Grupo grupo, Usuario docente, Long casoId, Usuario estudiante, Instant fechaInicio,
+            Instant fechaFin) {
         this.grupo = grupo;
         this.docente = docente;
         this.casoId = casoId;
+        this.estudiante = estudiante;
         this.fechaInicio = fechaInicio;
         this.fechaFin = fechaFin;
     }
 
-    public void actualizar(Grupo grupo, Long casoId, Instant fechaInicio, Instant fechaFin, boolean activo) {
+    public void actualizar(Grupo grupo, Long casoId, Usuario estudiante, Instant fechaInicio, Instant fechaFin,
+            boolean activo) {
         this.grupo = grupo;
         this.casoId = casoId;
+        this.estudiante = estudiante;
         this.fechaInicio = fechaInicio;
         this.fechaFin = fechaFin;
         this.activo = activo;

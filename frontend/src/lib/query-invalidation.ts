@@ -13,7 +13,7 @@ export const queryInvalidation = {
   simulationSummary: (queryClient: QueryClient, id: number) =>
     queryClient.invalidateQueries({ queryKey: queryKeys.simulations.summary(id) }),
   attempts: (queryClient: QueryClient) =>
-    queryClient.invalidateQueries({ queryKey: queryKeys.attempts.all() }),
+    queryClient.invalidateQueries({ queryKey: ["attempts"] }),
   attempt: (queryClient: QueryClient, id: number) =>
     queryClient.invalidateQueries({ queryKey: queryKeys.attempts.detail(id) }),
   attemptSummary: (queryClient: QueryClient, id: number) =>
@@ -22,6 +22,10 @@ export const queryInvalidation = {
     queryClient.invalidateQueries({ queryKey: queryKeys.attempts.feedback(id) }),
   attemptAiSummary: (queryClient: QueryClient, id: number) =>
     queryClient.invalidateQueries({ queryKey: queryKeys.attempts.aiSummary(id) }),
+  attemptConsequences: (queryClient: QueryClient, id: number) =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.attempts.consequences(id) }),
+  attemptPedagogicalAnalysis: (queryClient: QueryClient, id: number) =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.attempts.pedagogicalAnalysis(id) }),
   evaluations: (queryClient: QueryClient) =>
     queryClient.invalidateQueries({ queryKey: queryKeys.evaluations.all() }),
   evaluation: (queryClient: QueryClient, id: string) =>
@@ -35,13 +39,15 @@ export const queryInvalidation = {
   groups: (queryClient: QueryClient) =>
     queryClient.invalidateQueries({ queryKey: queryKeys.groups.all() }),
   groupStudents: (queryClient: QueryClient, groupId: number) =>
-    queryClient.invalidateQueries({
-      queryKey: queryKeys.groups.students(groupId),
-    }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.groups.students(groupId) }),
   schedules: (queryClient: QueryClient) =>
     queryClient.invalidateQueries({ queryKey: queryKeys.schedules.all() }),
   assignments: (queryClient: QueryClient) =>
     queryClient.invalidateQueries({ queryKey: queryKeys.assignments() }),
   teacherFeedback: (queryClient: QueryClient) =>
-    queryClient.invalidateQueries({ queryKey: queryKeys.teacherFeedback.all() }),
+    queryClient.invalidateQueries({ queryKey: ["teacher"] }),
+  teacherMetrics: (queryClient: QueryClient) =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.teacherMetrics.all() }),
+  studentSessions: (queryClient: QueryClient) =>
+    queryClient.invalidateQueries({ queryKey: ["student"] }),
 } as const;

@@ -3,6 +3,9 @@ import { httpClient } from "@/services/http-client";
 import { withQuery } from "@/services/query-params";
 import type {
   AddGroupStudentRequest,
+  AddGroupTeacherRequest,
+  BatchGroupStudentsRequest,
+  BatchGroupStudentsResponse,
   ChangePasswordRequest,
   CreateGroupRequest,
   CreateScheduleRequest,
@@ -10,6 +13,8 @@ import type {
   GroupFilters,
   GroupResponse,
   GroupStudentResponse,
+  GroupTeacherResponse,
+  JoinGroupRequest,
   RoleResponse,
   ScheduleFilters,
   ScheduleResponse,
@@ -80,6 +85,31 @@ export const groupService = {
     httpClient.patch<GroupResponse>(
       `${apiEndpoints.groups}/${id}/deactivate`
     ),
+  remove: (id: number) =>
+    httpClient.delete<void>(`${apiEndpoints.groups}/${id}`),
+  join: (request: JoinGroupRequest) =>
+    httpClient.post<GroupResponse, JoinGroupRequest>(
+      `${apiEndpoints.groups}/join`,
+      request
+    ),
+} as const;
+
+function groupTeachersPath(groupId: number): string {
+  return `${apiEndpoints.groups}/${groupId}/teachers`;
+}
+
+export const groupTeacherService = {
+  list: (groupId: number) =>
+    httpClient.get<GroupTeacherResponse[]>(groupTeachersPath(groupId)),
+  add: (groupId: number, request: AddGroupTeacherRequest) =>
+    httpClient.post<GroupTeacherResponse, AddGroupTeacherRequest>(
+      groupTeachersPath(groupId),
+      request
+    ),
+  remove: (groupId: number, docenteId: number) =>
+    httpClient.delete<void>(
+      withQuery(groupTeachersPath(groupId), { docenteId })
+    ),
 } as const;
 
 export const groupStudentService = {
@@ -93,6 +123,16 @@ export const groupStudentService = {
   remove: (groupId: number, estudianteId: number) =>
     httpClient.delete<void>(
       withQuery(groupStudentsPath(groupId), { estudianteId })
+    ),
+  addBatch: (groupId: number, request: BatchGroupStudentsRequest) =>
+    httpClient.post<BatchGroupStudentsResponse, BatchGroupStudentsRequest>(
+      `${groupStudentsPath(groupId)}/batch`,
+      request
+    ),
+  removeBatch: (groupId: number, request: BatchGroupStudentsRequest) =>
+    httpClient.post<BatchGroupStudentsResponse, BatchGroupStudentsRequest>(
+      `${groupStudentsPath(groupId)}/batch-remove`,
+      request
     ),
 } as const;
 

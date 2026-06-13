@@ -11,6 +11,10 @@ import com.agora.modules.simulation.service.AttemptFeedbackService;
 import com.agora.modules.simulation.service.AttemptJournalService;
 import com.agora.modules.simulation.service.AttemptQueryService;
 import com.agora.modules.simulation.service.AttemptSummaryService;
+import com.agora.modules.simulation.dto.AttemptConsequenceListResponse;
+import com.agora.modules.simulation.dto.PedagogicalAnalysisResponse;
+import com.agora.modules.simulation.service.ConsequenceQueryService;
+import com.agora.modules.simulation.service.PedagogicalAnalysisService;
 import com.agora.security.SecurityExpressions;
 import com.agora.security.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
@@ -46,6 +50,8 @@ public class AttemptController {
     private final AttemptFeedbackService feedbackService;
     private final AttemptSummaryService summaryService;
     private final AttemptQueryService queryService;
+    private final ConsequenceQueryService consequenceQueryService;
+    private final PedagogicalAnalysisService pedagogicalAnalysisService;
 
     @GetMapping
     @PreAuthorize(SecurityExpressions.ACADEMIC_PARTICIPANT)
@@ -108,6 +114,16 @@ public class AttemptController {
         return feedbackService.crearDocente(attemptId, request, principal, clientIp(servletRequest));
     }
 
+    @PutMapping("/{attemptId}/feedback/{feedbackId}")
+    @PreAuthorize(SecurityExpressions.TEACHER_FEEDBACK)
+    @Operation(summary = "Update teacher feedback for an attempt")
+    public FeedbackResponse actualizarFeedback(@PathVariable Long attemptId, @PathVariable Long feedbackId,
+            @Valid @RequestBody CreateFeedbackRequest request, @AuthenticationPrincipal UserPrincipal principal,
+            HttpServletRequest servletRequest) {
+        return feedbackService.actualizarDocente(attemptId, feedbackId, request, principal,
+                clientIp(servletRequest));
+    }
+
     @GetMapping("/{attemptId}/feedback")
     @PreAuthorize(SecurityExpressions.ACADEMIC_PARTICIPANT)
     @Operation(summary = "List feedback for an attempt")
@@ -122,6 +138,22 @@ public class AttemptController {
     public AttemptSummaryResponse resumen(@PathVariable Long attemptId,
             @AuthenticationPrincipal UserPrincipal principal, HttpServletRequest servletRequest) {
         return summaryService.obtener(attemptId, principal, clientIp(servletRequest));
+    }
+
+    @GetMapping("/{attemptId}/consequences")
+    @PreAuthorize(SecurityExpressions.ACADEMIC_PARTICIPANT)
+    @Operation(summary = "List accumulated clinical consequences for an attempt")
+    public AttemptConsequenceListResponse consecuencias(@PathVariable Long attemptId,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return consequenceQueryService.listarPorIntento(attemptId, principal);
+    }
+
+    @GetMapping("/{attemptId}/pedagogical-analysis")
+    @PreAuthorize(SecurityExpressions.ACADEMIC_PARTICIPANT)
+    @Operation(summary = "Get structured pedagogical analysis for an attempt")
+    public PedagogicalAnalysisResponse analisisPedagogico(@PathVariable Long attemptId,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return pedagogicalAnalysisService.analizar(attemptId, principal);
     }
 
     private String clientIp(HttpServletRequest request) {

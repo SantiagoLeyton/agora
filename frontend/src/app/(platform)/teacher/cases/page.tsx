@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Plus, Edit, Eye, Trash2 } from "lucide-react";
+import { Plus, Edit, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { HeroSection, Surface, PageLoading } from "@/components/design-system";
-import { useCases, useDeleteCase } from "@/hooks/use-data";
+import { useCases } from "@/hooks/use-data";
 import { useAuthStore } from "@/store";
 import { canManageClinicalCases } from "@/lib/case-permissions";
 import { getPageHeroMeta } from "@/lib/page-meta";
@@ -26,8 +26,6 @@ export default function TeacherCasesPage() {
   const meta = getPageHeroMeta("/teacher/cases");
   const backendRole = useAuthStore((state) => state.user?.backendRole);
   const canManage = canManageClinicalCases(backendRole);
-  const deleteCase = useDeleteCase();
-
   const [search, setSearch] = useState("");
   const [nivelDificultad, setNivelDificultad] = useState("");
   const [rdaSearch, setRdaSearch] = useState("");
@@ -43,17 +41,6 @@ export default function TeacherCasesPage() {
   }, [search, nivelDificultad, rdaSearch, activo]);
 
   const { data: cases, isLoading } = useCases(filters);
-
-  const handleDelete = async (caseId: string, title: string) => {
-    if (!window.confirm(`¿Eliminar el caso "${title}"? Esta acción no se puede deshacer.`)) {
-      return;
-    }
-    try {
-      await deleteCase.mutateAsync(Number(caseId));
-    } catch {
-      window.alert("No se pudo eliminar el caso. Puede tener intentos registrados.");
-    }
-  };
 
   return (
     <div className="space-y-8">
@@ -162,23 +149,12 @@ export default function TeacherCasesPage() {
               </div>
               <div className="flex shrink-0 gap-2">
                 {canManage && (
-                  <>
-                    <Button asChild variant="outline" size="sm">
-                      <Link href={`/teacher/cases/${caseItem.id}/edit`}>
-                        <Edit className="h-3.5 w-3.5" />
-                        Editar
-                      </Link>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(caseItem.id, caseItem.title)}
-                      disabled={deleteCase.isPending}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Eliminar
-                    </Button>
-                  </>
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/teacher/cases/${caseItem.id}/edit`}>
+                      <Edit className="h-3.5 w-3.5" />
+                      Editar
+                    </Link>
+                  </Button>
                 )}
                 <Button asChild variant="ghost" size="sm">
                   <Link href={`/simulator/${caseItem.id}`}>

@@ -5,6 +5,7 @@ import {
   setRefreshTokenHook,
 } from "@/services/auth-token-provider";
 import { authService } from "@/services/auth-service";
+import { resetUserScopedClientState } from "@/lib/user-session-cleanup";
 import { mapAuthenticatedUserToUser } from "@/types/auth";
 import type { PatientLive2DModel, SimulationSession, User } from "@/types";
 
@@ -103,6 +104,7 @@ export const useAuthStore = create<AuthState>()(
         }
 
         get().clearSession();
+        resetUserScopedClientState();
       },
       refreshSession: async () => {
         const refreshToken = get().refreshToken;
@@ -133,7 +135,8 @@ export const useAuthStore = create<AuthState>()(
           isLoading: false,
         }),
       setAuthLoading: (isLoading) => set({ isLoading }),
-      clearSession: () =>
+      clearSession: () => {
+        resetUserScopedClientState();
         set({
           accessToken: null,
           refreshToken: null,
@@ -141,7 +144,8 @@ export const useAuthStore = create<AuthState>()(
           role: null,
           isAuthenticated: false,
           isLoading: false,
-        }),
+        });
+      },
       setHasHydrated: (hasHydrated) => set({ hasHydrated }),
     }),
     {
@@ -163,69 +167,57 @@ export const useAuthStore = create<AuthState>()(
 setAccessTokenProvider(() => useAuthStore.getState().accessToken);
 setRefreshTokenHook(() => useAuthStore.getState().refreshSession());
 
-export const useSimulatorStore = create<SimulatorState>()(
-  persist(
-    (set, get) => ({
-      session: null,
-      isPlaying: false,
-      timerRunning: false,
-      startSession: (caseId, sceneId, patientModel) =>
-        set({
-          isPlaying: true,
-          timerRunning: true,
-          session: {
-            caseId,
-            currentSceneId: sceneId,
-            patientModel,
-            decisions: [],
-            startedAt: new Date().toISOString(),
-            elapsedSeconds: 0,
-          },
-        }),
-      selectOption: (sceneId, optionId, nextSceneId) => {
-        const session = get().session;
-        if (!session) return;
-        set({
-          session: {
-            ...session,
-            currentSceneId: nextSceneId,
-            decisions: [
-              ...session.decisions,
-              { sceneId, optionId, timestamp: new Date().toISOString() },
-            ],
-          },
-        });
+export const useSimulatorStore = create<SimulatorState>()((set, get) => ({
+  session: null,
+  isPlaying: false,
+  timerRunning: false,
+  startSession: (caseId, sceneId, patientModel) =>
+    set({
+      isPlaying: true,
+      timerRunning: true,
+      session: {
+        caseId,
+        currentSceneId: sceneId,
+        patientModel,
+        decisions: [],
+        startedAt: new Date().toISOString(),
+        elapsedSeconds: 0,
       },
-      setSession: (session) =>
-        set({
-          session,
-          isPlaying: session.status !== "FINALIZADO" && session.status !== "ABANDONADO",
-          timerRunning: session.status === "EN_PROCESO",
-        }),
-      setCurrentScene: (sceneId) => {
-        const session = get().session;
-        if (!session) return;
-        set({ session: { ...session, currentSceneId: sceneId } });
-      },
-      tickTimer: () => {
-        const session = get().session;
-        if (!session || !get().timerRunning) return;
-        set({ session: { ...session, elapsedSeconds: session.elapsedSeconds + 1 } });
-      },
-      pauseTimer: () => set({ timerRunning: false }),
-      resumeTimer: () => set({ timerRunning: true }),
-      endSession: () => set({ session: null, isPlaying: false, timerRunning: false }),
     }),
-    {
-      name: "simulador-session",
-      partialize: (state) => ({
-        session: state.session,
-        isPlaying: state.isPlaying,
-        timerRunning: state.timerRunning,
-      }),
-    }
-  )
-);
+  selectOption: (sceneId, optionId, nextSceneId) => {
+    const session = get().session;
+    if (!session) return;
+    set({
+      session: {
+        ...session,
+        currentSceneId: nextSceneId,
+        decisions: [
+          ...session.decisions,
+          { sceneId, optionId, timestamp: new Date().toISOString() },
+        ],
+      },
+    });
+  },
+  setSession: (session) =>
+    set({
+      session,
+      isPlaying: session.status !== "FINALIZADO" && session.status !== "ABANDONADO",
+      timerRunning: session.status === "EN_PROCESO",
+    }),
+  setCurrentScene: (sceneId) => {
+    const session = get().session;
+    if (!session) return;
+    set({ session: { ...session, currentSceneId: sceneId } });
+  },
+  tickTimer: () => {
+    const session = get().session;
+    if (!session || !get().timerRunning) return;
+    set({ session: { ...session, elapsedSeconds: session.elapsedSeconds + 1 } });
+  },
+  pauseTimer: () => set({ timerRunning: false }),
+  resumeTimer: () => set({ timerRunning: true }),
+  endSession: () => set({ session: null, isPlaying: false, timerRunning: false }),
+}));
 
 export const useUIStore = create<UIState>((set) => ({
   sidebarOpen: true,

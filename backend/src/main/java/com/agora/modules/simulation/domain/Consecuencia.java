@@ -34,9 +34,17 @@ public class Consecuencia {
     @Column(length = 1000)
     private String mensaje;
 
+    @Column(name = "observacion_pedagogica", length = 2000)
+    private String observacionPedagogica;
+
     public Consecuencia(Opcion opcion, String descripcion, String mensaje) {
+        this(opcion, descripcion, mensaje, null);
+    }
+
+    public Consecuencia(Opcion opcion, String descripcion, String mensaje, String observacionPedagogica) {
         this.opcion = opcion;
         this.descripcion = descripcion;
         this.mensaje = mensaje;
+        this.observacionPedagogica = observacionPedagogica;
     }
 }

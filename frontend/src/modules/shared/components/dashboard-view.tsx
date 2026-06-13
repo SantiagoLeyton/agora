@@ -61,21 +61,12 @@ export function DashboardView() {
         ]}
         action={
           <>
-            {inProgress ? (
-              <Button asChild size="lg">
-                <Link href={`/simulator/${inProgress.casoId}/play`}>
-                  Continuar sesión
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-            ) : (
-              <Button asChild size="lg">
-                <Link href="/dashboard/sessions">
-                  Ver sesiones asignadas
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-            )}
+            <Button asChild size="lg">
+              <Link href="/courses">
+                Continuar sesión
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
             <Button asChild variant="outline" size="lg">
               <Link href="/simulator">Explorar {clinicalCopy.cases.toLowerCase()}</Link>
             </Button>

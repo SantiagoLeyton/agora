@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query-keys";
 import { queryInvalidation } from "@/lib/query-invalidation";
+import { useAuthStore } from "@/store";
 import { evaluationService } from "@/services/api";
 import { attemptService, type AttemptFilters } from "@/services/attempt-service";
 import { clinicalCaseService } from "@/services/case-service";
@@ -25,10 +26,12 @@ import {
 import type {
   GroupFilters,
   AddGroupStudentRequest,
+  BatchGroupStudentsRequest,
   ChangePasswordRequest,
   CreateGroupRequest,
   CreateScheduleRequest,
   CreateUserRequest,
+  JoinGroupRequest,
   ScheduleFilters,
   UpdateGroupRequest,
   UpdateScheduleRequest,
@@ -40,6 +43,10 @@ import type { AISummaryRequest, AnswerSimulationRequest, CreateFeedbackRequest, 
 import { caseResourceService } from "@/services/case-resource-service";
 import type { CreateCaseBundleRequest, UpdateCaseBundleRequest } from "@/services/case-service";
 import type { TeacherMetricsFilters } from "@/types/teacher-metrics";
+
+function useAuthUserId(): string | null {
+  return useAuthStore((state) => state.user?.id ?? null);
+}
 
 export function useCases(filters: CaseFilters = { size: 100 }) {
   return useQuery({
@@ -84,9 +91,11 @@ export function useAttemptSummary(attemptId?: number) {
 }
 
 export function useAttempts(filters: AttemptFilters = { size: 100, sort: "fechaInicio,desc" }) {
+  const userId = useAuthUserId();
   return useQuery({
-    queryKey: queryKeys.attempts.list(filters),
+    queryKey: queryKeys.attempts.list(userId, filters),
     queryFn: () => attemptService.list(filters),
+    enabled: Boolean(userId),
   });
 }
 
@@ -107,16 +116,20 @@ export function useAttemptFeedback(attemptId?: number) {
 }
 
 export function useTeacherFeedbackQueue() {
+  const userId = useAuthUserId();
   return useQuery({
-    queryKey: queryKeys.teacherFeedback.all(),
+    queryKey: queryKeys.teacherFeedback.all(userId),
     queryFn: () => teacherFeedbackService.list(),
+    enabled: Boolean(userId),
   });
 }
 
 export function useMyAcademicProgress() {
+  const userId = useAuthUserId();
   return useQuery({
-    queryKey: ["academic-progress", "me"],
+    queryKey: ["academic-progress", userId ?? "anonymous", "me"],
     queryFn: () => pedagogicalService.myProgress(),
+    enabled: Boolean(userId),
   });
 }
 
@@ -144,9 +157,11 @@ export function useTeacherMetrics(filters: TeacherMetricsFilters = {}) {
 }
 
 export function useMyAssignedSessions() {
+  const userId = useAuthUserId();
   return useQuery({
-    queryKey: queryKeys.studentSessions.all(),
+    queryKey: queryKeys.studentSessions.all(userId),
     queryFn: () => studentSessionService.listAssigned(),
+    enabled: Boolean(userId),
   });
 }
 
@@ -171,10 +186,49 @@ export function useCreateFeedback() {
   });
 }
 
+export function useUpdateFeedback() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      attemptId,
+      feedbackId,
+      request,
+    }: {
+      attemptId: number;
+      feedbackId: number;
+      request: CreateFeedbackRequest;
+    }) => attemptService.updateFeedback(attemptId, feedbackId, request),
+    onSuccess: (_, { attemptId }) => {
+      queryInvalidation.attemptFeedback(queryClient, attemptId);
+      queryInvalidation.attemptSummary(queryClient, attemptId);
+      queryInvalidation.attempts(queryClient);
+      queryInvalidation.teacherFeedback(queryClient);
+      queryInvalidation.evaluations(queryClient);
+    },
+  });
+}
+
 export function useAttemptAISummaries(attemptId?: number) {
   return useQuery({
     queryKey: queryKeys.attempts.aiSummary(attemptId ?? 0),
     queryFn: () => attemptService.aiSummaries(attemptId ?? 0),
+    enabled: Number.isFinite(attemptId),
+  });
+}
+
+export function useAttemptConsequences(attemptId?: number) {
+  return useQuery({
+    queryKey: queryKeys.attempts.consequences(attemptId ?? 0),
+    queryFn: () => attemptService.consequences(attemptId ?? 0),
+    enabled: Number.isFinite(attemptId),
+  });
+}
+
+export function usePedagogicalAnalysis(attemptId?: number) {
+  return useQuery({
+    queryKey: queryKeys.attempts.pedagogicalAnalysis(attemptId ?? 0),
+    queryFn: () => attemptService.pedagogicalAnalysis(attemptId ?? 0),
     enabled: Number.isFinite(attemptId),
   });
 }
@@ -215,12 +269,12 @@ export function useStudents() {
   });
 }
 
-export function useGroups() {
+export function useGroups(filters: GroupFilters = { size: 100 }) {
   return useQuery({
-    queryKey: queryKeys.groups.summary({ size: 100 }),
+    queryKey: queryKeys.groups.summary(filters),
     queryFn: async () => {
       const [groupsPage, schedulesPage] = await Promise.all([
-        groupService.list({ size: 100 }),
+        groupService.list(filters),
         scheduleService.list({ activo: true, size: 100 }),
       ]);
 
@@ -446,6 +500,43 @@ export function useRemoveGroupStudent(groupId: number) {
   });
 }
 
+export function useJoinGroup() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: JoinGroupRequest) => groupService.join(request),
+    onSuccess: () => queryInvalidation.groups(queryClient),
+  });
+}
+
+export function useBatchAddGroupStudents(groupId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: BatchGroupStudentsRequest) =>
+      groupStudentService.addBatch(groupId, request),
+    onSuccess: () => {
+      queryInvalidation.groupStudents(queryClient, groupId);
+      queryInvalidation.students(queryClient);
+      queryInvalidation.groups(queryClient);
+    },
+  });
+}
+
+export function useBatchRemoveGroupStudents(groupId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: BatchGroupStudentsRequest) =>
+      groupStudentService.removeBatch(groupId, request),
+    onSuccess: () => {
+      queryInvalidation.groupStudents(queryClient, groupId);
+      queryInvalidation.students(queryClient);
+      queryInvalidation.groups(queryClient);
+    },
+  });
+}
+
 export function useCreateSchedule() {
   const queryClient = useQueryClient();
 
@@ -544,6 +635,33 @@ export function useDeleteCase() {
   return useMutation({
     mutationFn: (id: number) => clinicalCaseService.delete(id),
     onSuccess: () => queryInvalidation.cases(queryClient),
+  });
+}
+
+export function useActivateCase() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => clinicalCaseService.activate(id),
+    onSuccess: () => queryInvalidation.cases(queryClient),
+  });
+}
+
+export function useDeactivateCase() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => clinicalCaseService.deactivate(id),
+    onSuccess: () => queryInvalidation.cases(queryClient),
+  });
+}
+
+export function useDeleteGroup() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => groupService.remove(id),
+    onSuccess: () => queryInvalidation.groups(queryClient),
   });
 }
 

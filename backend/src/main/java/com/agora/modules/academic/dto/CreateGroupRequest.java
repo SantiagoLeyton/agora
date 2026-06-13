@@ -11,5 +11,8 @@ public record CreateGroupRequest(
         String descripcion,
         @NotBlank(message = "El periodo es obligatorio")
         @Size(max = 50, message = "El periodo no puede superar 50 caracteres")
-        String periodo) {
+        String periodo,
+        @Size(min = 4, max = 32, message = "La clave debe tener entre 4 y 32 caracteres")
+        String claveAcceso,
+        Long docenteId) {
 }

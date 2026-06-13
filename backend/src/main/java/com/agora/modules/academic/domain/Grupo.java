@@ -41,6 +41,9 @@ public class Grupo {
     @Column(nullable = false, length = 50)
     private String periodo;
 
+    @Column(name = "clave_acceso", nullable = false, length = 32)
+    private String claveAcceso;
+
     @Column(nullable = false)
     private boolean activo = true;
 
@@ -53,17 +56,24 @@ public class Grupo {
     @OneToMany(mappedBy = "grupo")
     private Set<GrupoEstudiante> estudiantes = new HashSet<>();
 
-    public Grupo(Usuario docente, String nombre, String descripcion, String periodo) {
+    @OneToMany(mappedBy = "grupo")
+    private Set<GrupoDocente> docentes = new HashSet<>();
+
+    public Grupo(Usuario docente, String nombre, String descripcion, String periodo, String claveAcceso) {
         this.docente = docente;
         this.nombre = nombre;
         this.descripcion = descripcion;
         this.periodo = periodo;
+        this.claveAcceso = claveAcceso;
     }
 
-    public void actualizar(String nombre, String descripcion, String periodo) {
+    public void actualizar(String nombre, String descripcion, String periodo, String claveAcceso) {
         this.nombre = nombre;
         this.descripcion = descripcion;
         this.periodo = periodo;
+        if (claveAcceso != null && !claveAcceso.isBlank()) {
+            this.claveAcceso = claveAcceso;
+        }
         fechaActualizacion = Instant.now();
     }
 
@@ -74,6 +84,11 @@ public class Grupo {
 
     public void desactivar() {
         activo = false;
+        fechaActualizacion = Instant.now();
+    }
+
+    public void cambiarDocente(Usuario docente) {
+        this.docente = docente;
         fechaActualizacion = Instant.now();
     }
 }

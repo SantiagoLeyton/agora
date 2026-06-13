@@ -13,6 +13,7 @@ import com.agora.modules.academic.dto.AddGroupStudentRequest;
 import com.agora.modules.academic.dto.CreateGroupRequest;
 import com.agora.modules.academic.dto.GroupResponse;
 import com.agora.modules.academic.dto.GroupStudentResponse;
+import com.agora.modules.academic.repository.GrupoDocenteRepository;
 import com.agora.modules.academic.repository.GrupoEstudianteRepository;
 import com.agora.modules.academic.repository.GrupoRepository;
 import com.agora.modules.user.domain.Rol;
@@ -33,6 +34,7 @@ class GroupServiceTest {
 
     @Mock GrupoRepository grupoRepository;
     @Mock GrupoEstudianteRepository grupoEstudianteRepository;
+    @Mock GrupoDocenteRepository grupoDocenteRepository;
     @Mock UsuarioRepository usuarioRepository;
     @Mock OperationalAuditService auditService;
 
@@ -42,8 +44,13 @@ class GroupServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new GroupService(grupoRepository, grupoEstudianteRepository, usuarioRepository,
-                new AcademicAccessService(), auditService);
+        service = new GroupService(
+                grupoRepository,
+                grupoEstudianteRepository,
+                grupoDocenteRepository,
+                usuarioRepository,
+                new AcademicAccessService(grupoDocenteRepository),
+                auditService);
         docente = usuario(1L, "DOCENTE", "docente@agora.com");
         estudiante = usuario(2L, "ESTUDIANTE", "estudiante@agora.com");
     }
@@ -57,7 +64,7 @@ class GroupServiceTest {
             return grupo;
         });
 
-        GroupResponse response = service.crear(new CreateGroupRequest("Grupo A", "Base", "2026-1"),
+        GroupResponse response = service.crear(new CreateGroupRequest("Grupo A", "Base", "2026-1", "GRUPO-1234", null),
                 principal(1L, "DOCENTE"), "127.0.0.1");
 
         assertThat(response.id()).isEqualTo(10L);
@@ -97,7 +104,7 @@ class GroupServiceTest {
     }
 
     private Grupo grupo() {
-        Grupo grupo = new Grupo(docente, "Grupo A", "Base", "2026-1");
+        Grupo grupo = new Grupo(docente, "Grupo A", "Base", "2026-1", "GRUPO-1234");
         ReflectionTestUtils.setField(grupo, "id", 10L);
         return grupo;
     }

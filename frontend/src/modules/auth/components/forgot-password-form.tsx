@@ -8,18 +8,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { authService } from "@/services/auth-service";
+import { ApiError } from "@/services/api-error";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [devLink, setDevLink] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    setLoading(false);
-    setSent(true);
+    setError("");
+    try {
+      const response = await authService.forgotPassword(email);
+      setDevLink(response.enlaceDesarrollo ?? null);
+      setSent(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "No se pudo procesar la solicitud.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (sent) {
@@ -28,10 +39,18 @@ export function ForgotPasswordForm() {
         <Card className="border-border/60 shadow-lg text-center">
           <CardContent className="pt-8 pb-8">
             <CheckCircle2 className="mx-auto h-12 w-12 text-success" />
-            <h2 className="mt-4 font-display text-xl font-semibold">Correo enviado</h2>
+            <h2 className="mt-4 font-display text-xl font-semibold">Solicitud registrada</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Revisa tu bandeja de entrada para restablecer tu contraseña.
+              Si el correo existe en el sistema, recibirás instrucciones para restablecer tu contraseña.
             </p>
+            {devLink && (
+              <p className="mt-4 rounded-lg bg-muted/40 p-3 text-left text-xs text-muted-foreground">
+                Modo desarrollo: usa este enlace para restablecer la contraseña.
+                <Link href={devLink} className="mt-2 block break-all text-primary hover:underline">
+                  {devLink}
+                </Link>
+              </p>
+            )}
             <Button asChild className="mt-6" variant="outline">
               <Link href="/login">Volver al inicio de sesión</Link>
             </Button>
@@ -46,7 +65,7 @@ export function ForgotPasswordForm() {
       <Card className="border-border/60 shadow-lg">
         <CardHeader>
           <CardTitle>Recuperar contraseña</CardTitle>
-          <CardDescription>Te enviaremos un enlace de recuperación</CardDescription>
+          <CardDescription>Te enviaremos un enlace de recuperación si el correo está registrado.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -57,6 +76,7 @@ export function ForgotPasswordForm() {
                 <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-9" required />
               </div>
             </div>
+            {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Enviando..." : "Enviar enlace"}
             </Button>

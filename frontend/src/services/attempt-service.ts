@@ -6,11 +6,13 @@ import type {
   AISummaryHistoryResponse,
   AISummaryRequest,
   AISummaryResponse,
+  AttemptConsequenceListResponse,
   AttemptResponse,
   AttemptSummaryResponse,
   CreateFeedbackRequest,
   FeedbackResponse,
   JournalResponse,
+  PedagogicalAnalysisResponse,
   SimulationResponse,
 } from "@/types/simulation";
 
@@ -41,6 +43,11 @@ export const attemptService = {
       `${attemptPath(attemptId)}/feedback`,
       request
     ),
+  updateFeedback: (attemptId: number, feedbackId: number, request: CreateFeedbackRequest) =>
+    httpClient.put<FeedbackResponse, CreateFeedbackRequest>(
+      `${attemptPath(attemptId)}/feedback/${feedbackId}`,
+      request
+    ),
   journal: (attemptId: number) =>
     httpClient.get<JournalResponse[]>(`${attemptPath(attemptId)}/journal`),
   summary: (attemptId: number) =>
@@ -53,5 +60,13 @@ export const attemptService = {
     httpClient.post<AISummaryResponse, AISummaryRequest>(
       `${attemptPath(attemptId)}/ai/summary`,
       request
+    ),
+  consequences: (attemptId: number) =>
+    httpClient.get<AttemptConsequenceListResponse>(
+      `${attemptPath(attemptId)}/consequences`
+    ),
+  pedagogicalAnalysis: (attemptId: number) =>
+    httpClient.get<PedagogicalAnalysisResponse>(
+      `${attemptPath(attemptId)}/pedagogical-analysis`
     ),
 } as const;

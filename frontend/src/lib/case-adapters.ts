@@ -54,6 +54,9 @@ export function mapCaseToSimulationCase(response: CaseResponse): SimulationCase 
     createdAt: response.fechaCreacion,
     updatedAt: response.fechaActualizacion,
     isActive: response.activo,
+    presentable: response.presentable ?? undefined,
+    programacionActivaId: response.programacionActivaId ?? undefined,
+    mensajePresentacion: response.mensajePresentacion ?? undefined,
   };
 }
 
@@ -129,7 +132,9 @@ export function mapSimulationToSession(
   simulation: SimulationResponse,
   builder: CaseBuilderResponse,
   patientModel: PatientLive2DModel,
-  summary?: AttemptSummaryResponse
+  summary?: AttemptSummaryResponse,
+  ownerUserId?: string,
+  programacionId?: number
 ): SimulationSession {
   const startedAt = simulation.intento.fechaInicio;
   const elapsedSeconds = Math.max(
@@ -139,6 +144,8 @@ export function mapSimulationToSession(
 
   return {
     attemptId: simulation.intento.id,
+    ownerUserId,
+    programacionId,
     status: simulation.intento.estado,
     states: simulation.estados,
     caseId: String(simulation.intento.casoId),

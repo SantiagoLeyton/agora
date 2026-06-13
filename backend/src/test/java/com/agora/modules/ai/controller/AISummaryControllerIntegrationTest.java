@@ -121,9 +121,9 @@ class AISummaryControllerIntegrationTest {
         Escena escena = escenaRepository.save(new Escena(caso, 1, "Escena", "Desc", "Contenido"));
         Pregunta pregunta = preguntaRepository.save(new Pregunta(escena, "Que haria?", true));
         opcionRepository.save(new Opcion(pregunta, "Dialogar", "Desc", 1));
-        Grupo grupo = grupoRepository.save(new Grupo(teacher, "Grupo", "Desc", "2026-1"));
+        Grupo grupo = grupoRepository.save(new Grupo(teacher, "Grupo", "Desc", "2026-1", "TEST-1234"));
         grupoEstudianteRepository.save(new GrupoEstudiante(grupo, student));
-        Programacion programacion = programacionRepository.save(new Programacion(grupo, teacher, caso.getId(),
+        Programacion programacion = programacionRepository.save(new Programacion(grupo, teacher, caso.getId(), null,
                 Instant.now(), Instant.now().plusSeconds(3600)));
         estadoEmocionalRepository.save(new EstadoEmocional("CONFIANZA", "Confianza", 0, 100, 50));
         caseId = caso.getId();
@@ -164,8 +164,8 @@ class AISummaryControllerIntegrationTest {
                         .header("Authorization", bearer(teacher)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.intentoId").value(attemptId))
-                .andExpect(jsonPath("$.sintesis.length()").value(3))
-                .andExpect(jsonPath("$.sintesis[?(@.fueExitosa == false)]").exists());
+                .andExpect(jsonPath("$.sintesis.length()").value(2))
+                .andExpect(jsonPath("$.sintesis[?(@.modeloUtilizado == 'mock-ai-provider-v1')]").exists());
     }
 
     private Long start(String token) throws Exception {

@@ -56,7 +56,53 @@ export interface AnswerResponse {
   preguntaId: number;
   opcionId: number;
   mensaje: string | null;
+  consecuencia: ConsequenceDetailResponse | null;
   estados: SimulationStateResponse[];
+}
+
+export interface ConsequenceImpactResponse {
+  estado: string;
+  variacion: number;
+  valorAnterior: number | null;
+  valorActual: number | null;
+}
+
+export interface ConsequenceDetailResponse {
+  id: number;
+  mensaje: string | null;
+  descripcion: string | null;
+  observacionPedagogica: string | null;
+  impactos: ConsequenceImpactResponse[];
+}
+
+export interface AttemptConsequenceResponse {
+  respuestaId: number;
+  preguntaId: number;
+  pregunta: string;
+  opcionId: number;
+  opcion: string;
+  mensaje: string | null;
+  descripcion: string | null;
+  observacionPedagogica: string | null;
+  impactos: ConsequenceImpactResponse[];
+  fechaRespuesta: string;
+}
+
+export interface AttemptConsequenceListResponse {
+  attemptId: number;
+  consecuencias: AttemptConsequenceResponse[];
+}
+
+export interface PedagogicalAnalysisResponse {
+  attemptId: number;
+  retroalimentacionClinica: string;
+  retroalimentacionPedagogica: string;
+  recomendaciones: string[];
+  rdaAlcanzados: import("@/types/pedagogical").RdaEvaluationItem[];
+  rdaPendientes: import("@/types/pedagogical").RdaEvaluationItem[];
+  consecuenciasAcumuladas: AttemptConsequenceResponse[];
+  estadosFinales: SimulationStateResponse[];
+  notaFinal: number | null;
 }
 
 export interface AttemptAnswerResponse {

@@ -17,7 +17,7 @@ import { PatientModelPicker } from "@/components/simulator/PatientModelPicker";
 import { useCase, useCaseBuilder, useStartSimulation } from "@/hooks/use-data";
 import { mapSimulationToSession } from "@/lib/case-adapters";
 import { simulationService } from "@/services/simulation-service";
-import { useSimulatorStore } from "@/store";
+import { useAuthStore, useSimulatorStore } from "@/store";
 import type { PatientLive2DModel } from "@/types";
 
 interface CaseDetailPageProps {
@@ -34,8 +34,18 @@ export default function CaseDetailPage({ params }: CaseDetailPageProps) {
   const { caseId } = use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const programacionId = searchParams.get("programacionId");
+  const programacionIdParam = searchParams.get("programacionId");
+  const currentUserId = useAuthStore((state) => state.user?.id);
+  const backendRole = useAuthStore((state) => state.user?.backendRole);
   const { data: caseItem, isLoading } = useCase(caseId);
+  const programacionId =
+    programacionIdParam ??
+    (caseItem?.programacionActivaId ? String(caseItem.programacionActivaId) : null);
+  const canPresent =
+    backendRole !== "ESTUDIANTE" || caseItem?.presentable === true || Boolean(programacionIdParam);
+  const presentationMessage =
+    caseItem?.mensajePresentacion ??
+    "Este caso aún no tiene una programación activa para presentación.";
   const { data: builder, isLoading: isBuilderLoading } = useCaseBuilder(caseId);
   const session = useSimulatorStore((s) => s.session);
   const setSession = useSimulatorStore((s) => s.setSession);
@@ -47,6 +57,7 @@ export default function CaseDetailPage({ params }: CaseDetailPageProps) {
 
   const canContinue =
     session?.caseId === caseId &&
+    session.ownerUserId === currentUserId &&
     !!session.patientModel &&
     !!session.attemptId &&
     session.status === "EN_PROCESO";
@@ -65,7 +76,16 @@ export default function CaseDetailPage({ params }: CaseDetailPageProps) {
       simulationService.detail(started.intentoId),
       simulationService.summary(started.intentoId),
     ]);
-    setSession(mapSimulationToSession(simulation, builder, selectedModel, summary));
+    setSession(
+      mapSimulationToSession(
+        simulation,
+        builder,
+        selectedModel,
+        summary,
+        currentUserId ?? undefined,
+        programacionId ? Number(programacionId) : undefined
+      )
+    );
     const playUrl = programacionId
       ? `/simulator/${caseId}/play?programacionId=${programacionId}`
       : `/simulator/${caseId}/play`;
@@ -98,20 +118,30 @@ export default function CaseDetailPage({ params }: CaseDetailPageProps) {
         action={
           canContinue ? (
             <Button asChild size="lg">
-              <Link href={`/simulator/${caseId}/play`}>
+              <Link
+                href={
+                  programacionId
+                    ? `/simulator/${caseId}/play?programacionId=${programacionId}`
+                    : `/simulator/${caseId}/play`
+                }
+              >
                 <Play className="h-4 w-4" />
                 Continuar simulación
               </Link>
             </Button>
-          ) : (
+          ) : canPresent ? (
             <Button
               size="lg"
               disabled={!selectedModel || !firstSceneId || startSimulation.isPending}
               onClick={handleStart}
             >
               <Play className="h-4 w-4" />
-              Iniciar simulación
+              Presentar caso
             </Button>
+          ) : (
+            <Surface variant="muted" className="px-4 py-3 text-sm text-muted-foreground">
+              {presentationMessage}
+            </Surface>
           )
         }
         aside={
@@ -127,7 +157,7 @@ export default function CaseDetailPage({ params }: CaseDetailPageProps) {
         }
       />
 
-      {!canContinue && (
+      {!canContinue && canPresent && (
         <Surface className="p-6">
           <SectionHeader
             title="Paciente virtual"
@@ -143,6 +173,12 @@ export default function CaseDetailPage({ params }: CaseDetailPageProps) {
               Este caso no tiene escenas configuradas.
             </p>
           )}
+        </Surface>
+      )}
+
+      {!canContinue && !canPresent && (
+        <Surface variant="muted" className="p-6 text-sm text-muted-foreground">
+          {presentationMessage}
         </Surface>
       )}
 

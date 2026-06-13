@@ -10,6 +10,9 @@ import { ClinicalSessionHeader } from "@/components/simulator/ClinicalSessionHea
 import { ClinicalSessionSidebar } from "@/components/simulator/ClinicalSessionSidebar";
 import { ClinicalSessionFooter } from "@/components/simulator/ClinicalSessionFooter";
 import { CompletionBanner } from "@/components/simulator/CompletionBanner";
+import { AttemptFinalResults } from "@/components/simulator/AttemptFinalResults";
+import { ConsequenceBanner } from "@/components/simulator/ConsequenceBanner";
+import { EmotionalRadarPanel } from "@/components/simulator/EmotionalRadarPanel";
 import { SimulationResults } from "@/components/simulator/SimulationResults";
 import { DecisionPanel } from "@/modules/simulator/components/decision-panel";
 import { useSimulatorStore, useAuthStore } from "@/store";
@@ -47,6 +50,7 @@ import {
 } from "@/lib/session-participants";
 import { PatientModelPicker } from "@/components/simulator/PatientModelPicker";
 import type { DialogueOption, PatientLive2DModel, PsychologistVisualState, SimulationCase } from "@/types";
+import type { ConsequenceDetailResponse } from "@/types/simulation";
 
 const ClinicalSessionStage = dynamic(
   () =>
@@ -74,11 +78,18 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
   const programacionId = searchParams.get("programacionId");
   const user = useAuthStore((s) => s.user);
   const { session, setSession } = useSimulatorStore();
+  const ownerUserId = user?.id;
+  const linkedProgramacionId = programacionId
+    ? Number(programacionId)
+    : session?.programacionId;
   const [interactionNonce, setInteractionNonce] = useState(0);
+  const [lastConsequence, setLastConsequence] = useState<ConsequenceDetailResponse | null>(null);
   const finishRequestedRef = useRef(false);
 
   const activeAttemptId =
-    session?.caseId === caseItem.id ? session.attemptId : undefined;
+    session?.caseId === caseItem.id && session.ownerUserId === user?.id
+      ? session.attemptId
+      : undefined;
   const { data: builder, isLoading: isBuilderLoading } = useCaseBuilder(caseItem.id);
   const { data: simulation } = useSimulation(activeAttemptId);
   const { data: summary } = useAttemptSummary(activeAttemptId);
@@ -95,6 +106,7 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
   const needsModelChoice =
     (!session ||
       session.caseId !== caseItem.id ||
+      session.ownerUserId !== user?.id ||
       !session.attemptId ||
       !session.patientModel);
 
@@ -107,7 +119,14 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
       return;
     }
     setSession(
-      mapSimulationToSession(simulation, builder, session.patientModel, summary)
+      mapSimulationToSession(
+        simulation,
+        builder,
+        session.patientModel,
+        summary,
+        ownerUserId,
+        linkedProgramacionId
+      )
     );
   }, [builder, session?.patientModel, setSession, simulation, summary]);
 
@@ -132,7 +151,9 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
           finished,
           builder,
           session.patientModel,
-          refreshedSummary
+          refreshedSummary,
+          ownerUserId,
+          linkedProgramacionId
         )
       );
     });
@@ -320,17 +341,30 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
         createdSimulation,
         builder,
         pendingModel,
-        createdSummary
+        createdSummary,
+        ownerUserId,
+        programacionId ? Number(programacionId) : undefined
       )
     );
   };
 
   const handleSelect = async (option: DialogueOption) => {
     if (!session?.attemptId || !option.questionId || !builder) return;
-    await answerSimulation.mutateAsync({
+    const answerResult = await answerSimulation.mutateAsync({
       preguntaId: Number(option.questionId),
       opcionId: Number(option.id),
     });
+    if (answerResult.consecuencia) {
+      setLastConsequence(answerResult.consecuencia);
+    } else if (answerResult.mensaje) {
+      setLastConsequence({
+        id: 0,
+        mensaje: answerResult.mensaje,
+        descripcion: null,
+        observacionPedagogica: null,
+        impactos: [],
+      });
+    }
     const [updatedSimulation, updatedSummary] = await Promise.all([
       simulationService.detail(session.attemptId),
       simulationService.summary(session.attemptId),
@@ -346,7 +380,9 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
           finished,
           builder,
           session.patientModel,
-          finishedSummary
+          finishedSummary,
+          ownerUserId,
+          linkedProgramacionId
         )
       );
     } else {
@@ -355,7 +391,9 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
           updatedSimulation,
           builder,
           session.patientModel,
-          updatedSummary
+          updatedSummary,
+          ownerUserId,
+          linkedProgramacionId
         )
       );
     }
@@ -489,6 +527,13 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
           allianceScore={emotionalProfile.therapeuticAlliance}
         />
 
+        {session?.attemptId && (
+          <AttemptFinalResults
+            attemptId={session.attemptId}
+            summary={summary ?? null}
+          />
+        )}
+
         <SimulationResults
           summary={sessionSummary}
           formativeFeedback={formativeFeedback}
@@ -514,10 +559,15 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
               Ver análisis completo
             </Button>
           </div>
-        </div>
       </div>
-    );
-  }
+
+      <ConsequenceBanner
+        consequence={lastConsequence}
+        onDismiss={() => setLastConsequence(null)}
+      />
+    </div>
+  );
+}
 
   // Fase activa: layout original con columnas
   return (
@@ -579,7 +629,8 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
 
         {/* 25% — intervenciones */}
         <aside className="hidden min-h-0 min-w-0 flex-col overflow-hidden bg-card/30 lg:flex">
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-3">
+          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
+            <EmotionalRadarPanel states={session?.states} />
             {!isComplete ? (
               <DecisionPanel
                 options={currentScene.options}
@@ -609,6 +660,11 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
           />
         </div>
       )}
+
+      <ConsequenceBanner
+        consequence={lastConsequence}
+        onDismiss={() => setLastConsequence(null)}
+      />
     </div>
   );
 }

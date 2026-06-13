@@ -67,9 +67,9 @@ services:
       CORS_ALLOWED_METHODS: ${CORS_ALLOWED_METHODS:-GET,POST,PUT,PATCH,DELETE,OPTIONS}
       CORS_ALLOWED_HEADERS: ${CORS_ALLOWED_HEADERS:-Authorization,Content-Type}
       AI_PROVIDER: ${AI_PROVIDER:-ollama}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
-      OLLAMA_TIMEOUT_SECONDS: ${OLLAMA_TIMEOUT_SECONDS:-60}
+      OLLAMA_TIMEOUT_SECONDS: ${OLLAMA_TIMEOUT_SECONDS:-180}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:
@@ -78,9 +78,22 @@ services:
     networks:
       - agora-network
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: agora-ollama
+    profiles: ["full", "ai"]
+    restart: unless-stopped
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - agora-network
+
 volumes:
   postgres-data:
   pgadmin-data:
+  ollama-data:
 
 networks:
   agora-network:

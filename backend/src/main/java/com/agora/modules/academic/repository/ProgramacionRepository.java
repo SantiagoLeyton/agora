@@ -37,4 +37,33 @@ public interface ProgramacionRepository extends JpaRepository<Programacion, Long
             @Param("periodo") String periodo,
             @Param("grupoId") Long grupoId,
             @Param("now") Instant now);
+
+    @Query("""
+            SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END
+            FROM Programacion p
+            JOIN p.grupo g
+            JOIN g.estudiantes ge
+            WHERE p.casoId = :casoId
+            AND ge.estudiante.id = :estudianteId
+            AND (p.estudiante IS NULL OR p.estudiante.id = :estudianteId)
+            """)
+    boolean existsVisibleForStudent(@Param("casoId") Long casoId, @Param("estudianteId") Long estudianteId);
+
+    @Query("""
+            SELECT p.id FROM Programacion p
+            JOIN p.grupo g
+            JOIN g.estudiantes ge
+            WHERE p.casoId = :casoId
+            AND p.activo = true
+            AND ge.estudiante.id = :estudianteId
+            AND p.fechaInicio <= :now
+            AND p.fechaFin >= :now
+            AND (p.estudiante IS NULL OR p.estudiante.id = :estudianteId)
+            ORDER BY p.id DESC
+            LIMIT 1
+            """)
+    java.util.Optional<Long> findActivePresentationId(
+            @Param("casoId") Long casoId,
+            @Param("estudianteId") Long estudianteId,
+            @Param("now") Instant now);
 }

@@ -6,6 +6,8 @@ import com.agora.modules.academic.domain.Programacion;
 import com.agora.modules.academic.dto.CreateScheduleRequest;
 import com.agora.modules.academic.dto.ScheduleResponse;
 import com.agora.modules.academic.dto.UpdateScheduleRequest;
+import com.agora.modules.academic.repository.GrupoDocenteRepository;
+import com.agora.modules.academic.repository.GrupoEstudianteRepository;
 import com.agora.modules.academic.repository.GrupoRepository;
 import com.agora.modules.academic.repository.ProgramacionRepository;
 import com.agora.modules.user.domain.Usuario;
@@ -15,6 +17,8 @@ import com.agora.shared.exception.BusinessRuleException;
 import com.agora.shared.exception.ResourceNotFoundException;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +38,8 @@ public class ScheduleService {
 
     private final ProgramacionRepository programacionRepository;
     private final GrupoRepository grupoRepository;
+    private final GrupoEstudianteRepository grupoEstudianteRepository;
+    private final GrupoDocenteRepository grupoDocenteRepository;
     private final UsuarioRepository usuarioRepository;
     private final AcademicAccessService accessService;
     private final OperationalAuditService auditService;
@@ -44,8 +50,9 @@ public class ScheduleService {
         Grupo grupo = buscarGrupo(request.grupoId());
         accessService.requireTeacherOwner(grupo, principal);
         validarFechas(request.fechaInicio(), request.fechaFin());
+        Usuario estudiante = resolverEstudiante(grupo, request.estudianteId());
         Programacion programacion = programacionRepository.save(new Programacion(grupo, docente, request.casoId(),
-                request.fechaInicio(), request.fechaFin()));
+                estudiante, request.fechaInicio(), request.fechaFin()));
         auditService.registrar(docente, "SCHEDULE_CREATED", ACADEMIC_MODULE,
                 "Programacion creada para grupo: " + grupo.getId(), ip);
         return ScheduleResponse.from(programacion);
@@ -72,7 +79,9 @@ public class ScheduleService {
         Grupo grupo = buscarGrupo(request.grupoId());
         accessService.requireTeacherOwner(grupo, principal);
         validarFechas(request.fechaInicio(), request.fechaFin());
-        programacion.actualizar(grupo, request.casoId(), request.fechaInicio(), request.fechaFin(), request.activo());
+        Usuario estudiante = resolverEstudiante(grupo, request.estudianteId());
+        programacion.actualizar(grupo, request.casoId(), estudiante, request.fechaInicio(), request.fechaFin(),
+                request.activo());
         Programacion guardada = programacionRepository.save(programacion);
         auditService.registrar(buscarUsuario(principal.id()), "SCHEDULE_UPDATED", ACADEMIC_MODULE,
                 "Programacion actualizada: " + guardada.getId(), ip);
@@ -96,11 +105,28 @@ public class ScheduleService {
                 predicates.add(builder.lessThanOrEqualTo(root.get("fechaFin"), hasta));
             }
             if (accessService.isTeacher(principal)) {
-                predicates.add(builder.equal(root.get("docente").get("id"), principal.id()));
+                var grupoJoin = root.join("grupo");
+                Subquery<Long> coTeacher = query.subquery(Long.class);
+                Root<com.agora.modules.academic.domain.GrupoDocente> coRoot =
+                        coTeacher.from(com.agora.modules.academic.domain.GrupoDocente.class);
+                coTeacher.select(coRoot.get("grupo").get("id"));
+                coTeacher.where(builder.equal(coRoot.get("docente").get("id"), principal.id()));
+                predicates.add(builder.or(
+                        builder.equal(root.get("docente").get("id"), principal.id()),
+                        builder.equal(grupoJoin.get("docente").get("id"), principal.id()),
+                        grupoJoin.get("id").in(coTeacher)));
             } else if (accessService.isStudent(principal)) {
                 query.distinct(true);
-                predicates.add(builder.equal(root.join("grupo").join("estudiantes", JoinType.INNER)
-                        .get("estudiante").get("id"), principal.id()));
+                var grupoJoin = root.join("grupo");
+                var membership = builder.equal(grupoJoin.join("estudiantes", JoinType.INNER)
+                        .get("estudiante").get("id"), principal.id());
+                var individual = builder.and(
+                        builder.isNotNull(root.get("estudiante")),
+                        builder.equal(root.get("estudiante").get("id"), principal.id()));
+                var courseWide = builder.and(
+                        builder.isNull(root.get("estudiante")),
+                        membership);
+                predicates.add(builder.or(individual, courseWide));
             } else if (!accessService.isAdmin(principal)) {
                 throw new AccessDeniedException("Rol no autorizado");
             }
@@ -127,5 +153,19 @@ public class ScheduleService {
     private Usuario buscarUsuario(Long id) {
         return usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+    }
+
+    private Usuario resolverEstudiante(Grupo grupo, Long estudianteId) {
+        if (estudianteId == null) {
+            return null;
+        }
+        Usuario estudiante = buscarUsuario(estudianteId);
+        if (!"ESTUDIANTE".equals(estudiante.getRol().getNombre())) {
+            throw new BusinessRuleException("El usuario seleccionado no es estudiante");
+        }
+        if (!grupoEstudianteRepository.existsByGrupoIdAndEstudianteId(grupo.getId(), estudianteId)) {
+            throw new BusinessRuleException("El estudiante no pertenece al curso seleccionado");
+        }
+        return estudiante;
     }
 }

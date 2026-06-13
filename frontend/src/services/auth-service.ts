@@ -9,6 +9,12 @@ import type {
   RefreshResponse,
 } from "@/types/auth";
 
+export interface ForgotPasswordResponse {
+  mensaje: string;
+  tokenDesarrollo?: string | null;
+  enlaceDesarrollo?: string | null;
+}
+
 export const authService = {
   login: (request: LoginRequest) =>
     httpClient.post<LoginResponse, LoginRequest>(
@@ -33,4 +39,16 @@ export const authService = {
       retryOnUnauthorized: false,
     }),
   me: () => httpClient.get<AuthenticatedUser>(apiEndpoints.auth.me),
+  forgotPassword: (correo: string) =>
+    httpClient.post<ForgotPasswordResponse, { correo: string }>(
+      "/api/v1/auth/forgot-password",
+      { correo },
+      { auth: false, retryOnUnauthorized: false }
+    ),
+  resetPassword: (token: string, password: string) =>
+    httpClient.post<void, { token: string; password: string }>(
+      "/api/v1/auth/reset-password",
+      { token, password },
+      { auth: false, retryOnUnauthorized: false }
+    ),
 } as const;

@@ -27,11 +27,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Simulador Psicosocial | Universidad Evangélica",
+    default: "Simulador Psicosocial | CUE Alexander Von Humboldt",
     template: "%s | Simulador Psicosocial",
   },
   description:
-    "Plataforma institucional de simulación psicosocial, gestión académica y evaluación clínica — Universidad Evangélica.",
+    "Plataforma institucional de simulación psicosocial, gestión académica y evaluación clínica — CUE Alexander Von Humboldt.",
   icons: {
     icon: LOGO_PATH,
     apple: LOGO_PATH,

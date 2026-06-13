@@ -3,16 +3,16 @@ import { clinicalCopy } from "@/lib/clinical-copy";
 
 const studentNav: NavItem[] = [
   { title: "Inicio", href: "/dashboard", icon: "LayoutDashboard", roles: ["student"], section: "Aprendizaje" },
-  { title: "Mis sesiones asignadas", href: "/dashboard/sessions", icon: "CalendarClock", roles: ["student"], section: "Práctica clínica" },
+  { title: "Cursos", href: "/courses", icon: "GraduationCap", roles: ["student"], section: "Aprendizaje" },
   { title: clinicalCopy.simulator, href: "/simulator", icon: "Brain", roles: ["student"], section: "Práctica clínica" },
   { title: clinicalCopy.evaluation, href: "/evaluation", icon: "BarChart3", roles: ["student"], section: "Seguimiento" },
 ];
 
 const teacherNav: NavItem[] = [
   { title: "Panel docente", href: "/teacher", icon: "LayoutDashboard", roles: ["teacher"], section: "Principal", badge: "Inicio" },
+  { title: "Cursos", href: "/teacher/courses", icon: "GraduationCap", roles: ["teacher"], section: "Académico" },
   { title: clinicalCopy.cases, href: "/teacher/cases", icon: "BookOpen", roles: ["teacher"], section: "Académico" },
   { title: clinicalCopy.students, href: "/teacher/students", icon: "Users", roles: ["teacher"], section: "Académico" },
-  { title: "Cohortes clínicas", href: "/teacher/groups", icon: "UsersRound", roles: ["teacher"], section: "Académico" },
   { title: "Sesiones programadas", href: "/teacher/simulations", icon: "CalendarClock", roles: ["teacher"], section: "Operaciones" },
   { title: clinicalCopy.tasks, href: "/teacher/assignments", icon: "ClipboardList", roles: ["teacher"], section: "Operaciones" },
   { title: clinicalCopy.evaluations, href: "/teacher/evaluations", icon: "FileBarChart", roles: ["teacher"], section: "Evaluación clínica" },
@@ -24,6 +24,8 @@ const teacherNav: NavItem[] = [
 const adminNav: NavItem[] = [
   { title: "Administración", href: "/admin", icon: "LayoutDashboard", roles: ["admin"], section: "Institucional", badge: "Inicio" },
   { title: "Usuarios institucionales", href: "/admin/users", icon: "UserCog", roles: ["admin"], section: "Sistema" },
+  { title: "Cursos", href: "/admin/courses", icon: "GraduationCap", roles: ["admin"], section: "Academia" },
+  { title: clinicalCopy.cases, href: "/teacher/cases", icon: "BookOpen", roles: ["admin"], section: "Academia" },
   { title: "Configuración", href: "/admin/settings", icon: "SlidersHorizontal", roles: ["admin"], section: "Sistema" },
   { title: "Panel docente", href: "/teacher", icon: "GraduationCap", roles: ["admin"], section: "Academia" },
 ];

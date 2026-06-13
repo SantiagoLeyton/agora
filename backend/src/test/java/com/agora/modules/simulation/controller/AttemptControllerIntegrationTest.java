@@ -114,9 +114,9 @@ class AttemptControllerIntegrationTest {
         Escena escena = escenaRepository.save(new Escena(caso, 1, "Escena", "Desc", "Contenido"));
         Pregunta pregunta = preguntaRepository.save(new Pregunta(escena, "Que haria?", true));
         Opcion opcion = opcionRepository.save(new Opcion(pregunta, "Acompanhar", "Desc", 1));
-        Grupo grupo = grupoRepository.save(new Grupo(teacher, "Grupo", "Desc", "2026-1"));
+        Grupo grupo = grupoRepository.save(new Grupo(teacher, "Grupo", "Desc", "2026-1", "TEST-1234"));
         grupoEstudianteRepository.save(new GrupoEstudiante(grupo, student));
-        Programacion programacion = programacionRepository.save(new Programacion(grupo, teacher, caso.getId(),
+        Programacion programacion = programacionRepository.save(new Programacion(grupo, teacher, caso.getId(), null,
                 Instant.now(), Instant.now().plusSeconds(3600)));
         estadoEmocionalRepository.save(new EstadoEmocional("CONFIANZA", "Confianza", 0, 100, 50));
         caseId = caso.getId();

@@ -2,45 +2,35 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Brain, Clock, PlayCircle } from "lucide-react";
+import { ArrowRight, Brain, CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Surface, SectionHeader } from "@/components/design-system";
-import { useCases } from "@/hooks/use-data";
+import { useMyAssignedSessions } from "@/hooks/use-data";
+import { assignedSessionStatusLabel } from "@/lib/student-session-adapters";
 import { cn } from "@/lib/utils";
 
-const statusConfig = {
-  in_progress: { label: "En progreso", variant: "outline" as const, accent: "border-l-info" },
-  not_started: { label: "Pendiente", variant: "muted" as const, accent: "border-l-border" },
-  completed: { label: "Completado", variant: "success" as const, accent: "border-l-success" },
-};
-
 export function ContinueLearning() {
-  const { data: cases } = useCases();
-  const activeCases = (cases ?? [])
-    .filter((caseItem) => caseItem.status !== "completed")
-    .slice(0, 3);
+  const { data: sessions = [] } = useMyAssignedSessions();
+  const activeSessions = sessions.slice(0, 3);
 
   return (
     <Surface>
       <SectionHeader
         title="Tu ruta de aprendizaje"
-        description="Simulaciones clínicas asignadas y en curso"
+        description="Simulaciones asignadas desde tus cursos"
       />
       <div className="mt-5 space-y-3">
-        {activeCases.map((caseItem, index) => {
-          const status = statusConfig[caseItem.status];
-          return (
+        {activeSessions.length > 0 ? (
+          activeSessions.map((session, index) => (
             <motion.div
-              key={caseItem.id}
+              key={session.scheduleId}
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.06 }}
               className={cn(
                 "flex flex-col gap-4 rounded-xl border border-border/50 bg-muted/15 p-4 sm:flex-row sm:items-center",
-                "border-l-[3px] transition-colors hover:bg-muted/30",
-                status.accent
+                "border-l-[3px] border-l-primary/40"
               )}
             >
               <div className="flex flex-1 gap-4">
@@ -50,41 +40,38 @@ export function ContinueLearning() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap gap-2">
                     <Badge variant="outline" className="text-[10px] font-normal">
-                      {caseItem.category}
+                      {session.groupName}
                     </Badge>
-                    <Badge variant={status.variant} className="text-[10px]">
-                      {status.label}
+                    <Badge variant="secondary" className="text-[10px]">
+                      {assignedSessionStatusLabel(session.status)}
                     </Badge>
                   </div>
-                  <p className="mt-1.5 font-medium leading-snug">{caseItem.title}</p>
+                  <p className="mt-1.5 font-medium leading-snug">{session.caseTitle}</p>
                   <div className="mt-2 flex gap-3 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {caseItem.durationMinutes} min
+                      <CalendarClock className="h-3 w-3" />
+                      {new Date(session.fechaInicio).toLocaleDateString("es-CO")}
                     </span>
                   </div>
-                  {caseItem.progress > 0 && <Progress value={caseItem.progress} className="mt-2 h-1" />}
                 </div>
               </div>
-              <Button asChild size="sm" variant={caseItem.status === "in_progress" ? "default" : "outline"}>
-                <Link href={`/simulator/${caseItem.id}/play`}>
-                  {caseItem.status === "in_progress" ? (
-                    <>
-                      <PlayCircle className="h-4 w-4" />
-                      Continuar
-                    </>
-                  ) : (
-                    <>
-                      Iniciar
-                      <ArrowRight className="h-4 w-4" />
-                    </>
-                  )}
+              <Button asChild size="sm" variant="outline">
+                <Link href={`/simulator/${session.caseId}?programacionId=${session.scheduleId}`}>
+                  Ver simulación
+                  <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
             </motion.div>
-          );
-        })}
+          ))
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Aún no tienes simulaciones asignadas. Revisa tus cursos para comenzar.
+          </p>
+        )}
       </div>
+      <Button asChild variant="link" className="mt-4 h-auto p-0">
+        <Link href="/courses">Ir a mis cursos</Link>
+      </Button>
     </Surface>
   );
 }

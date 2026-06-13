@@ -8,5 +8,6 @@ public record AnswerResponse(
         Long preguntaId,
         Long opcionId,
         String mensaje,
+        ConsequenceDetailResponse consecuencia,
         List<SimulationStateResponse> estados) {
 }

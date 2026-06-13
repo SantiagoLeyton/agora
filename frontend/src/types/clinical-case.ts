@@ -29,6 +29,9 @@ export interface CaseResponse {
   creadorId: number | null;
   creadorNombre: string | null;
   resultadosAprendizaje: LearningOutcomeResponse[];
+  programacionActivaId?: number | null;
+  presentable?: boolean | null;
+  mensajePresentacion?: string | null;
 }
 
 export interface CaseRequest {
