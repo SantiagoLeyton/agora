@@ -15,6 +15,7 @@ import {
   CalendarClock,
   LineChart,
   MessageSquareText,
+  NotebookPen,
   type LucideIcon,
 } from "lucide-react";
 
@@ -35,4 +36,5 @@ export const iconMap: Record<string, LucideIcon> = {
   CalendarClock,
   LineChart,
   MessageSquareText,
+  NotebookPen,
 };

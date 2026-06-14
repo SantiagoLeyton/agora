@@ -27,6 +27,7 @@ export const apiEndpoints = {
   attempts: `${API_V1_PREFIX}/attempts`,
   groups: `${API_V1_PREFIX}/groups`,
   schedules: `${API_V1_PREFIX}/schedules`,
+  gradebook: `${API_V1_PREFIX}/gradebook`,
 } as const;
 
 export function buildApiUrl(path: string, baseUrl = apiConfig.baseUrl): string {

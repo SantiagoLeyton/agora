@@ -90,6 +90,11 @@ const routeHero: Record<string, PageHeroMeta> = {
     title: clinicalCopy.feedback,
     description: "Observaciones clínicas y seguimiento personalizado.",
   },
+  "/teacher/grades": {
+    eyebrow: "Seguimiento académico",
+    title: "Calificaciones",
+    description: "Libro de calificaciones, RDA, feedback y exportación por curso y caso.",
+  },
   "/admin": {
     eyebrow: "Institucional",
     title: "Administración",
@@ -104,6 +109,11 @@ const routeHero: Record<string, PageHeroMeta> = {
     eyebrow: "Sistema",
     title: "Configuración",
     description: "Parámetros académicos y políticas de simulación.",
+  },
+  "/admin/grades": {
+    eyebrow: "Seguimiento académico",
+    title: "Calificaciones institucionales",
+    description: "Consulta global de intentos, notas, RDA y exportaciones.",
   },
 };
 

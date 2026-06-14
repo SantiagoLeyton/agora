@@ -63,6 +63,12 @@ export const queryKeys = {
     all: () => ["teacher", "metrics"] as const,
     detail: (filters?: unknown) => ["teacher", "metrics", filters] as const,
   },
+  gradebook: {
+    all: () => ["gradebook"] as const,
+    entries: (filters?: unknown) => ["gradebook", "entries", filters] as const,
+    analytics: (filters?: unknown) => ["gradebook", "analytics", filters] as const,
+    detail: (attemptId: number) => ["gradebook", "detail", attemptId] as const,
+  },
   studentSessions: {
     all: (userId?: string | null) => ["student", userId ?? "anonymous", "sessions"] as const,
   },

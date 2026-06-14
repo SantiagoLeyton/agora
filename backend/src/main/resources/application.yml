@@ -28,6 +28,8 @@ agora:
   password-reset:
     frontend-url: ${AGORA_PASSWORD_RESET_URL:http://localhost:3000/reset-password}
     expose-dev-token: ${AGORA_EXPOSE_PASSWORD_RESET_TOKEN:true}
+  gradebook:
+    approval-threshold: ${AGORA_GRADEBOOK_APPROVAL_THRESHOLD:3.0}
 
 ai:
   provider: ${AI_PROVIDER:ollama}

@@ -9,6 +9,7 @@ public final class SecurityExpressions {
     public static final String RESOURCE_READER = "hasAnyRole('ADMINISTRADOR','DOCENTE_ADMIN','DOCENTE')";
     public static final String ACADEMIC_PARTICIPANT = "hasAnyRole('ADMINISTRADOR','DOCENTE_ADMIN','DOCENTE','ESTUDIANTE')";
     public static final String TEACHER_FEEDBACK = "hasAnyRole('ADMINISTRADOR','DOCENTE_ADMIN','DOCENTE')";
+    public static final String GRADEBOOK_VIEWER = "hasAnyRole('ADMINISTRADOR','DOCENTE_ADMIN','DOCENTE')";
     public static final String TEACHER_METRICS = "hasAnyRole('ADMINISTRADOR','DOCENTE_ADMIN','DOCENTE')";
     public static final String ACADEMIC_PROGRESS = "hasAnyRole('ADMINISTRADOR','DOCENTE_ADMIN','DOCENTE','ESTUDIANTE')";
 

@@ -43,6 +43,8 @@ import type { AISummaryRequest, AnswerSimulationRequest, CreateFeedbackRequest, 
 import { caseResourceService } from "@/services/case-resource-service";
 import type { CreateCaseBundleRequest, UpdateCaseBundleRequest } from "@/services/case-service";
 import type { TeacherMetricsFilters } from "@/types/teacher-metrics";
+import type { GradebookFilters } from "@/types/gradebook";
+import { gradebookService } from "@/services/gradebook-service";
 
 function useAuthUserId(): string | null {
   return useAuthStore((state) => state.user?.id ?? null);
@@ -153,6 +155,33 @@ export function useTeacherMetrics(filters: TeacherMetricsFilters = {}) {
   return useQuery({
     queryKey: queryKeys.teacherMetrics.detail(filters),
     queryFn: () => teacherMetricsService.get(filters),
+  });
+}
+
+export function useGradebookEntries(filters: GradebookFilters = { page: 0, size: 20 }) {
+  const userId = useAuthUserId();
+  return useQuery({
+    queryKey: queryKeys.gradebook.entries(filters),
+    queryFn: () => gradebookService.list(filters),
+    enabled: Boolean(userId),
+  });
+}
+
+export function useGradebookAnalytics(filters: Omit<GradebookFilters, "page" | "size" | "sort"> = {}) {
+  const userId = useAuthUserId();
+  return useQuery({
+    queryKey: queryKeys.gradebook.analytics(filters),
+    queryFn: () => gradebookService.analytics(filters),
+    enabled: Boolean(userId),
+  });
+}
+
+export function useGradebookDetail(attemptId?: number) {
+  const userId = useAuthUserId();
+  return useQuery({
+    queryKey: queryKeys.gradebook.detail(attemptId ?? 0),
+    queryFn: () => gradebookService.detail(attemptId ?? 0),
+    enabled: Boolean(userId) && Number.isFinite(attemptId),
   });
 }
 
