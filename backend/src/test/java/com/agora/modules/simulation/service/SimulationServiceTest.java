@@ -2,6 +2,7 @@ package com.agora.modules.simulation.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doAnswer;
@@ -36,6 +37,7 @@ import com.agora.modules.user.domain.Rol;
 import com.agora.modules.user.domain.Usuario;
 import com.agora.modules.user.repository.UsuarioRepository;
 import com.agora.security.UserPrincipal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -89,6 +91,8 @@ class SimulationServiceTest {
         EstadoEmocional confianza = withId(new EstadoEmocional("CONFIANZA", null, 0, 100, 50), 100L);
         when(usuarioRepository.findById(1L)).thenReturn(Optional.of(student));
         when(casoRepository.findById(10L)).thenReturn(Optional.of(caso));
+        when(programacionRepository.findActiveAcademicForStudent(eq(10L), eq(1L), any(Instant.class)))
+                .thenReturn(List.of());
         when(intentoRepository.save(any(Intento.class))).thenAnswer(invocation -> withId(invocation.getArgument(0), 20L));
         when(estadoEmocionalRepository.findAll()).thenReturn(List.of(confianza));
 

@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -44,6 +45,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GradebookService {
@@ -59,6 +61,9 @@ public class GradebookService {
     @Transactional(readOnly = true)
     public Page<GradebookEntryResponse> listar(GradebookFilterRequest filters, UserPrincipal principal, Pageable pageable) {
         validarAcceso(principal);
+        if ("ADMINISTRADOR".equals(principal.rol())) {
+            registrarIntentosHuerfanosConNota();
+        }
         Page<Intento> page = intentoRepository.findAll(buildSpecification(filters, principal), pageable);
         Map<Long, List<Retroalimentacion>> feedbackByAttempt = loadFeedback(page.getContent());
         return page.map(intento -> toEntry(intento, feedbackByAttempt.get(intento.getId())));
@@ -297,5 +302,16 @@ public class GradebookService {
     private String clientIp(HttpServletRequest request) {
         String forwarded = request.getHeader("X-Forwarded-For");
         return forwarded == null || forwarded.isBlank() ? request.getRemoteAddr() : forwarded.split(",")[0].trim();
+    }
+
+    private void registrarIntentosHuerfanosConNota() {
+        long huerfanos = intentoRepository.findAll().stream()
+                .filter(intento -> intento.getProgramacion() == null && intento.getNotaFinal() != null)
+                .count();
+        if (huerfanos > 0) {
+            log.warn(
+                    "Detectados {} intentos con nota pero sin programacion_id (no visibles en gradebook docente)",
+                    huerfanos);
+        }
     }
 }

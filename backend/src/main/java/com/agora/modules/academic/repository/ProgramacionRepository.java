@@ -66,4 +66,22 @@ public interface ProgramacionRepository extends JpaRepository<Programacion, Long
             @Param("casoId") Long casoId,
             @Param("estudianteId") Long estudianteId,
             @Param("now") Instant now);
+
+    @Query("""
+            SELECT p FROM Programacion p
+            JOIN FETCH p.grupo g
+            JOIN g.estudiantes ge
+            WHERE p.casoId = :casoId
+            AND p.activo = true
+            AND g.activo = true
+            AND ge.estudiante.id = :estudianteId
+            AND p.fechaInicio <= :now
+            AND p.fechaFin >= :now
+            AND (p.estudiante IS NULL OR p.estudiante.id = :estudianteId)
+            ORDER BY p.fechaInicio DESC, p.id DESC
+            """)
+    List<Programacion> findActiveAcademicForStudent(
+            @Param("casoId") Long casoId,
+            @Param("estudianteId") Long estudianteId,
+            @Param("now") Instant now);
 }

@@ -175,7 +175,11 @@ export function ClinicalCaseCard({ caseItem, index = 0 }: ClinicalCaseCardProps)
               <p className="rounded-lg border border-dashed border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
                 {caseItem.mensajePresentacion}
               </p>
-            ) : null}
+            ) : (
+              <Button asChild variant="secondary" size="sm" className="w-full">
+                <Link href={`/simulator/${caseItem.id}`}>Práctica libre</Link>
+              </Button>
+            )}
           </div>
         </div>
       </div>

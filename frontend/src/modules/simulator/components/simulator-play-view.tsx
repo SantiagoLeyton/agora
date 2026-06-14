@@ -24,6 +24,7 @@ import {
   useSimulation,
   useStartSimulation,
 } from "@/hooks/use-data";
+import { resolveProgramacionIdForStart, canStudentStartAcademicCase } from "@/lib/simulation-programacion";
 import { mapBuilderToScenes, mapSimulationToSession } from "@/lib/case-adapters";
 import { simulationService } from "@/services/simulation-service";
 import { getEmotionalProfile } from "@/lib/simulator-clinical";
@@ -75,13 +76,25 @@ interface SimulatorPlayViewProps {
 export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const programacionId = searchParams.get("programacionId");
+  const programacionIdParam = searchParams.get("programacionId");
   const user = useAuthStore((s) => s.user);
   const { session, setSession } = useSimulatorStore();
   const ownerUserId = user?.id;
-  const linkedProgramacionId = programacionId
-    ? Number(programacionId)
-    : session?.programacionId;
+  const isStudent = user?.backendRole === "ESTUDIANTE";
+  const resolvedProgramacionId = useMemo(
+    () =>
+      resolveProgramacionIdForStart({
+        queryParam: programacionIdParam,
+        session,
+        caseItem,
+      }),
+    [programacionIdParam, session, caseItem]
+  );
+  const linkedProgramacionId = resolvedProgramacionId;
+  const blockedAcademicStart =
+    isStudent &&
+    caseItem.presentable === true &&
+    !canStudentStartAcademicCase(caseItem, resolvedProgramacionId);
   const [interactionNonce, setInteractionNonce] = useState(0);
   const [lastConsequence, setLastConsequence] = useState<ConsequenceDetailResponse | null>(null);
   const finishRequestedRef = useRef(false);
@@ -327,10 +340,10 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
   );
 
   const handleConfirmModel = async () => {
-    if (!pendingModel || scenes.length === 0 || !builder) return;
+    if (!pendingModel || scenes.length === 0 || !builder || blockedAcademicStart) return;
     const started = await startSimulation.mutateAsync({
       casoId: Number(caseItem.id),
-      ...(programacionId ? { programacionId: Number(programacionId) } : {}),
+      ...(resolvedProgramacionId ? { programacionId: resolvedProgramacionId } : {}),
     });
     const [createdSimulation, createdSummary] = await Promise.all([
       simulationService.detail(started.intentoId),
@@ -343,7 +356,7 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
         pendingModel,
         createdSummary,
         ownerUserId,
-        programacionId ? Number(programacionId) : undefined
+        resolvedProgramacionId
       )
     );
   };
@@ -422,7 +435,15 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
           <p className="mt-2 text-sm text-muted-foreground">
             Antes de iniciar la sesión, elige el paciente virtual con el que practicarás.
           </p>
+          {blockedAcademicStart && (
+            <p className="mt-4 rounded-lg border border-dashed border-border/60 bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
+              Este caso aún no tiene una programación activa para presentación. Vuelve al expediente
+              del curso e inicia desde la asignación académica.
+            </p>
+          )}
         </div>
+        {!blockedAcademicStart && (
+          <>
         <PatientModelPicker value={pendingModel} onChange={setPendingModel} />
         <Button
           size="lg"
@@ -432,6 +453,8 @@ export function SimulatorPlayView({ caseItem }: SimulatorPlayViewProps) {
         >
           Entrar a la entrevista clínica
         </Button>
+          </>
+        )}
       </div>
     );
   }

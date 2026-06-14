@@ -16,6 +16,7 @@ import {
 import { PatientModelPicker } from "@/components/simulator/PatientModelPicker";
 import { useCase, useCaseBuilder, useStartSimulation } from "@/hooks/use-data";
 import { mapSimulationToSession } from "@/lib/case-adapters";
+import { resolveProgramacionIdForStart, isFreePracticeCase } from "@/lib/simulation-programacion";
 import { simulationService } from "@/services/simulation-service";
 import { useAuthStore, useSimulatorStore } from "@/store";
 import type { PatientLive2DModel } from "@/types";
@@ -38,11 +39,15 @@ export default function CaseDetailPage({ params }: CaseDetailPageProps) {
   const currentUserId = useAuthStore((state) => state.user?.id);
   const backendRole = useAuthStore((state) => state.user?.backendRole);
   const { data: caseItem, isLoading } = useCase(caseId);
-  const programacionId =
-    programacionIdParam ??
-    (caseItem?.programacionActivaId ? String(caseItem.programacionActivaId) : null);
-  const canPresent =
-    backendRole !== "ESTUDIANTE" || caseItem?.presentable === true || Boolean(programacionIdParam);
+  const isStudent = backendRole === "ESTUDIANTE";
+  const resolvedProgramacionId = resolveProgramacionIdForStart({
+    queryParam: programacionIdParam,
+    caseItem: caseItem ?? undefined,
+  });
+  const programacionId = resolvedProgramacionId ? String(resolvedProgramacionId) : null;
+  const isAcademicPresentation = caseItem?.presentable === true && Boolean(programacionId);
+  const isFreePractice = caseItem ? isFreePracticeCase(caseItem, isStudent) : false;
+  const canPresent = !isStudent || isAcademicPresentation || isFreePractice;
   const presentationMessage =
     caseItem?.mensajePresentacion ??
     "Este caso aún no tiene una programación activa para presentación.";
@@ -70,7 +75,7 @@ export default function CaseDetailPage({ params }: CaseDetailPageProps) {
     if (!selectedModel || !firstSceneId || !builder) return;
     const started = await startSimulation.mutateAsync({
       casoId: Number(caseId),
-      ...(programacionId ? { programacionId: Number(programacionId) } : {}),
+      ...(resolvedProgramacionId ? { programacionId: resolvedProgramacionId } : {}),
     });
     const [simulation, summary] = await Promise.all([
       simulationService.detail(started.intentoId),
@@ -83,11 +88,11 @@ export default function CaseDetailPage({ params }: CaseDetailPageProps) {
         selectedModel,
         summary,
         currentUserId ?? undefined,
-        programacionId ? Number(programacionId) : undefined
+        resolvedProgramacionId
       )
     );
-    const playUrl = programacionId
-      ? `/simulator/${caseId}/play?programacionId=${programacionId}`
+    const playUrl = resolvedProgramacionId
+      ? `/simulator/${caseId}/play?programacionId=${resolvedProgramacionId}`
       : `/simulator/${caseId}/play`;
     router.push(playUrl);
   };
@@ -136,7 +141,7 @@ export default function CaseDetailPage({ params }: CaseDetailPageProps) {
               onClick={handleStart}
             >
               <Play className="h-4 w-4" />
-              Presentar caso
+              {isFreePractice ? "Práctica libre" : "Presentar caso"}
             </Button>
           ) : (
             <Surface variant="muted" className="px-4 py-3 text-sm text-muted-foreground">

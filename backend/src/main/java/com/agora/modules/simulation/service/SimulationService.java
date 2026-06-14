@@ -49,10 +49,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SimulationService {
@@ -157,6 +159,12 @@ public class SimulationService {
         intento.finalizar();
         attemptGradingService.calcularYRegistrar(intento);
         Intento guardado = intentoRepository.save(intento);
+        if (guardado.getNotaFinal() != null && guardado.getProgramacion() == null) {
+            log.warn(
+                    "Intento {} finalizado con nota {} sin programacion_id (practica libre; no aparecera en gradebook docente)",
+                    guardado.getId(),
+                    guardado.getNotaFinal());
+        }
         Usuario actor = actor(principal);
         feedbackService.generarSistema(guardado, actor, ip);
         audit(actor, "SIMULATION_FINISHED", "Simulacion finalizada: intento " + id, ip);
@@ -213,11 +221,50 @@ public class SimulationService {
     }
 
     private Programacion buscarProgramacion(Long programacionId, Long casoId, Long estudianteId) {
-        if (programacionId == null) {
-            return null;
+        if (programacionId != null) {
+            return validarProgramacionExplicita(programacionId, casoId, estudianteId);
         }
+        return resolverProgramacionAcademica(casoId, estudianteId);
+    }
+
+    private Programacion validarProgramacionExplicita(Long programacionId, Long casoId, Long estudianteId) {
         Programacion programacion = programacionRepository.findById(programacionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Programacion no encontrada"));
+        validarProgramacionAcademica(programacion, casoId, estudianteId);
+        return programacion;
+    }
+
+    private Programacion resolverProgramacionAcademica(Long casoId, Long estudianteId) {
+        List<Programacion> candidatas =
+                programacionRepository.findActiveAcademicForStudent(casoId, estudianteId, Instant.now());
+        if (candidatas.isEmpty()) {
+            return null;
+        }
+        List<Programacion> individuales = candidatas.stream()
+                .filter(programacion -> programacion.getEstudiante() != null)
+                .toList();
+        if (!individuales.isEmpty()) {
+            return seleccionarProgramacion(individuales);
+        }
+        return seleccionarProgramacion(candidatas);
+    }
+
+    private Programacion seleccionarProgramacion(List<Programacion> candidatas) {
+        if (candidatas.size() == 1) {
+            return candidatas.get(0);
+        }
+        Instant fechaReferencia = candidatas.get(0).getFechaInicio();
+        long empate = candidatas.stream()
+                .filter(programacion -> programacion.getFechaInicio().equals(fechaReferencia))
+                .count();
+        if (empate > 1) {
+            throw new BusinessRuleException(
+                    "Existen varias programaciones activas para este caso. Indique programacionId.");
+        }
+        return candidatas.get(0);
+    }
+
+    private void validarProgramacionAcademica(Programacion programacion, Long casoId, Long estudianteId) {
         if (!programacion.isActivo()) {
             throw new BusinessRuleException("La programacion no esta activa");
         }
@@ -245,7 +292,6 @@ public class SimulationService {
                 && !programacion.getEstudiante().getId().equals(estudianteId)) {
             throw new AccessDeniedException("La programacion no esta asignada a este estudiante");
         }
-        return programacion;
     }
 
     private void validarPreguntaYOpcion(Intento intento, Pregunta pregunta, Opcion opcion) {
